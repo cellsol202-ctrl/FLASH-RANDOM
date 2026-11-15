@@ -1,24 +1,30 @@
 {
-  "expo": {
-    "name": "flash-random",
-    "slug": "flash-random",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "ios": {
-      "supportsTablet": true
+  "name": "Flash Random",
+  "slug": "flash-random",
+  "version": "1.0.0",
+  "orientation": "portrait",
+  "icon": "./assets/icon.png",
+  "android": {
+    "package": "com.flashrandom.app",
+    "adaptiveIcon": {
+      "foregroundImage": "./assets/adaptive-icon.png",
+      "backgroundColor": "#020722"
     },
-    "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
+    "permissions": [
+      "android.permission.RECORD_AUDIO",
+      "android.permission.MODIFY_AUDIO_SETTINGS",
+      "android.permission.FOREGROUND_SERVICE",
+      "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+    ]
+  },
+  "plugins": [
+    "expo-status-bar",
+    "expo-audio",
+    "expo-sharing"
+  ],
+  "extra": {
+    "eas": {
+      "projectId": "e0cd885f-d2c9-472b-8895-467c6592a9e7"
     }
   }
 }
