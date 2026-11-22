@@ -20,13 +20,7 @@ const CONFIG = {
   tap_roulette: { set: 'roulette', files: [require('../assets/sounds/tap_roulette.wav')], volume: 0.4 },
   tap_dice:     { set: 'dice',     files: [require('../assets/sounds/tap_dice.wav')], volume: 0.4 },
   tap_race:     { set: 'race',     files: [require('../assets/sounds/tap_race.wav')], volume: 0.4 },
-  tap_bomb:     { set: 'bomb',     files: [require('../assets/sounds/tap_bomb.wav')], volume: 0.45 },
   tap_coin:     { set: 'coin',     files: [require('../assets/sounds/tap_coin.wav')], volume: 0.4 },
-
-  // bomba-relógio
-  beep0: { set: 'bomb', files: [require('../assets/sounds/beep0.wav')], volume: 0.6, len: 100 },
-  beep1: { set: 'bomb', files: [require('../assets/sounds/beep1.wav')], volume: 0.6, len: 100 },
-  blast: { set: 'bomb', files: [require('../assets/sounds/blast.mp3')], volume: 1 }, // explosão de bomba de verdade
 
   // cara ou coroa
   // tinido da moeda girando: um arquivo para cada duração do voo (3, 4 ou 5 s), terminando junto com ela
@@ -66,7 +60,7 @@ const CONFIG = {
 const UNLOAD_DELAY = 800;  // espera um pouco antes de liberar (a troca de tela não descarrega e recarrega à toa)
 
 let tapGroup = null;          // um dos modos abaixo, ou null (toque padrão)
-const MODES = ['names', 'roulette', 'dice', 'race', 'bomb', 'coin'];
+const MODES = ['names', 'roulette', 'dice', 'race', 'coin'];
 const pools = {};            // nome -> { players, i, last, cfg }
 const refs = {};             // grupo -> quantas telas estão usando
 const timers = {};           // grupo -> timeout de liberação

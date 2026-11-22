@@ -12,6 +12,7 @@ import { t } from '../i18n';
 import { neon } from '../theme';
 import { sk, G } from '../skin';
 
+import { tint, liveStyles } from '../themes';
 // Primeira abertura do app: boas-vindas e uma pergunta sobre deficiência.
 // "Sim" leva direto para as Configurações (bloco de Acessibilidade); "Não" vai para a Home.
 // No futuro esta mesma tela pode ganhar cadastro / entrar com o Google.
@@ -61,10 +62,10 @@ export default function WelcomeScreen({ begin }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = liveStyles(() => ({
   container: { flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20, paddingVertical: 24, gap: 18 },
   card: { backgroundColor: neon.panel, borderRadius: 22, borderWidth: 2, borderColor: neon.border, paddingHorizontal: 18, paddingVertical: 18 },
-  question: { color: '#FFFFFF', fontSize: 21, fontWeight: '900', textAlign: 'center' },
+  question: { color: tint('#FFFFFF'), fontSize: 21, fontWeight: '900', textAlign: 'center' },
   hint: { color: neon.sub, fontSize: 14, fontWeight: '700', textAlign: 'center', marginTop: 10 },
   buttons: { width: '100%', marginTop: 4 },
-});
+}));

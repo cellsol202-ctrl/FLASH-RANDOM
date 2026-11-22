@@ -2,7 +2,7 @@ import { getSettings } from './settings';
 
 // Perfil visual do app. "normal" = neon de sempre; "glass" = vidro (fundo com manchas de luz, painéis translúcidos).
 // O perfil muda só a "casca" das telas (fundo, topo, painéis, listas, botões). A arte dos jogos
-// (roleta, dados, bolinhas, moeda, bomba, troféu, raios e efeitos) é a mesma nos dois perfis.
+// (roleta, dados, bolinhas, moeda, troféu, raios e efeitos) é a mesma nos dois perfis.
 export const isGlass = () => getSettings().profile === 'glass';
 
 // devolve o estilo normal e, no perfil vidro, o estilo de vidro por cima

@@ -2,13 +2,17 @@ import React, { useEffect, useRef, useState } from 'react';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import ShareCard from '../components/ShareCard';
+import ShareInfoSheet from '../components/ShareInfoSheet';
 import { View, Animated, Easing, StyleSheet, useWindowDimensions } from 'react-native';
 import Text from '../components/Text';
 import Header from '../components/Header';
 import ScreenTitle from '../components/ScreenTitle';
 import Glow from '../components/Glow';
 import Icon from '../components/Icon';
+import GlassBall from '../components/GlassBall';
+import { MODE_COLORS } from '../modeColors';
 import { play, useSounds } from '../sounds';
+import { stash } from '../removed';
 import Button from '../components/Button';
 import Trophy from '../components/Trophy';
 import Sparks from '../components/Sparks';
@@ -19,15 +23,16 @@ import { effectsOn, getSettings } from '../settings';
 import AnimatedIn from '../components/AnimatedIn';
 import { colors, neon, FILL } from '../theme';
 import { announce } from '../a11y';
-import { sk, G } from '../skin';
+import { sk, G, isGlass } from '../skin';
 
+import { tint, liveStyles } from '../themes';
 const STAGE_W = 280;
 const STAGE_H = 168;
 // clarões da cadeia de raios [ms, força]: o "bzzt" do som acende um clarão fraco, o "ding" (270 ms) o mais forte, e os outros vão diminuindo até os 3 s
 const CRACKS = [[40, 0.6], [500, 0.5], [1200, 1], [1900, 0.55], [2450, 0.3], [2950, 0.12]];
-const TYPE_ICON = { names: 'bolt', roulette: 'wheel', dice: 'dice', race: 'flag', bomb: 'bomb', coin: 'coin' };
+const TYPE_ICON = { names: 'drum', roulette: 'roulette', dice: 'dice', race: 'race', coin: 'coin', number: 'hash', first: 'finger' };
 
-export default function ResultScreen({ params, replace, reset, participants }) {
+export default function ResultScreen({ params, replace, reset, participants, setParticipants }) {
   useSounds('result');
   const pop = useRef(new Animated.Value(0)).current;
   const float = useRef(new Animated.Value(0)).current;
@@ -36,6 +41,8 @@ export default function ResultScreen({ params, replace, reset, participants }) {
   const cardRef = useRef(null);
   const [sharing, setSharing] = useState(false);
   const [shareErr, setShareErr] = useState(false);
+  const [askInfo, setAskInfo] = useState(false); // janela com os dados do sorteio
+  const [info, setInfo] = useState(null);       // nome, local, responsável e observações do cartão
   // Cadeia de trovões: um estalo forte e mais cinco cada vez mais fracos, ao longo de 3 s (junto com o som win.wav).
   // power = intensidade dos raios (1 = forte, 0 = calmo); sobe a cada estalo e vai caindo sozinha.
   const power = useRef(0);
@@ -77,9 +84,12 @@ export default function ResultScreen({ params, replace, reset, participants }) {
   }, [pop, float]);
 
   // Tira "print" do cartão (campeão + modo + participantes) e abre a folha de compartilhar do celular (WhatsApp, etc.)
-  const share = async () => {
+  const share = async (data) => {
     if (sharing) return;
+    setAskInfo(false);
     setSharing(true); setShareErr(false);
+    setInfo(data);
+    await new Promise((r) => setTimeout(r, 250)); // deixa o cartão se redesenhar com os dados antes de fotografar
     try {
       const uri = await captureRef(cardRef, { format: 'png', quality: 1, result: 'tmpfile' });
       if (!(await Sharing.isAvailableAsync())) throw new Error('indisponível');
@@ -90,13 +100,31 @@ export default function ResultScreen({ params, replace, reset, participants }) {
     setSharing(false);
   };
 
-  const AGAIN = { roulette: 'Roulette', dice: 'Dice', race: 'Race', bomb: 'Bomb', coin: 'Coin' };
+  const AGAIN = { roulette: 'Roulette', dice: 'Dice', race: 'Race', coin: 'Coin' };
   const again = () => replace(AGAIN[params.type] || 'DrawNames');
+  // Tirar o sorteado da lista e sortear de novo, até sobrar só um. Cara ou coroa tem só 2, então fica de fora.
+  const heat = params.heat; // fim de uma bateria (não é a final)
+  const canRemove = !heat && params.type !== 'coin' && participants.length >= 2;
+  const lastTwo = participants.length === 2;
+  const removeWinner = () => {
+    // tira só UM com esse nome (as listas prontas, como Sim ou não, têm nomes repetidos)
+    const at = participants.findIndex((p) => p.name === params.winner);
+    const rest = participants.filter((_, i) => i !== at);
+    if (!stash.all) stash.all = participants; // guarda a lista inteira para devolver depois
+    setParticipants(rest);
+    if (rest.length === 1) replace('Result', { winner: rest[0].name, type: params.type, color: params.color, last: true });
+    else replace(AGAIN[params.type] || 'DrawNames');
+  };
+  // volta ao início devolvendo a lista completa
+  const newDraw = () => {
+    if (stash.all) { setParticipants(stash.all); stash.all = null; }
+    reset();
+  };
   const floatY = float.interpolate({ inputRange: [0, 1], outputRange: [0, -8] });
   const accent = params.color || colors.yellow;
   const rgb = parseInt(accent.slice(1), 16);
   const darkAccent = ((rgb >> 16) & 255) * 0.3 + ((rgb >> 8) & 255) * 0.59 + (rgb & 255) * 0.11 < 90; // ex.: dado preto
-  const tagInk = darkAccent ? '#FFFFFF' : colors.dark;
+  const tagInk = darkAccent ? tint('#FFFFFF') : colors.dark;
 
   return (
     <View style={{ flex: 1 }}>
@@ -120,16 +148,18 @@ export default function ResultScreen({ params, replace, reset, participants }) {
             <View style={styles.ribbonWrap}>
               <View style={styles.ribbon}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <Icon name="crown" size={20} color={colors.dark} stroke={2.6} fill />
-                  <Text style={styles.ribbonTxt}>{t('result.champion')}</Text>
+                  <Icon name={heat ? 'flag' : 'crown'} size={20} color={colors.dark} stroke={2.6} fill={!heat} />
+                  <Text style={styles.ribbonTxt}>{heat ? t('heat.ribbon', { n: heat.n }) : t('result.champion')}</Text>
                 </View>
               </View>
             </View>
-            <Text style={styles.label}>{t('result.label')}</Text>
+            <Text style={styles.label}>{heat ? t('heat.winnerLabel') : params.last ? t('result.lastOne') : t('result.label')}</Text>
             <Text style={styles.winner} numberOfLines={2} adjustsFontSizeToFit>{params.winner}</Text>
             <View style={[styles.tag, { backgroundColor: accent }, darkAccent && { borderWidth: 1.5, borderColor: neon.ice }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Icon name={TYPE_ICON[params.type] || 'bolt'} size={16} color={tagInk} stroke={2.6} />
+                {isGlass() && MODE_COLORS[params.type]
+                  ? <GlassBall size={26} accent={MODE_COLORS[params.type].accent} deep={MODE_COLORS[params.type].deep}><Icon name={TYPE_ICON[params.type]} size={17} color={tint('#FFFFFF')} stroke={2.4} /></GlassBall>
+                  : <Icon name={TYPE_ICON[params.type] || 'bolt'} size={16} color={tagInk} stroke={2.6} />}
                 <Text style={[styles.tagTxt, { color: tagInk }]}>{t(`mode.${TYPE_ICON[params.type] ? params.type : 'names'}`)}</Text>
               </View>
             </View>
@@ -139,44 +169,63 @@ export default function ResultScreen({ params, replace, reset, participants }) {
       </View>
 
       <View style={styles.footer}>
+        {heat ? (
+          <>
+            <Button variant="primary" icon={<Icon name="flag" size={22} color={tint('#FFFFFF')} stroke={2.6} />} title={heat.lastHeat ? t('heat.toFinal') : t('heat.next')} onPress={() => replace(AGAIN[params.type] || 'Race', { plan: heat.next })} />
+            <View style={{ height: 6 }} />
+            <Button variant="indigo" compact icon={<Icon name="home" size={20} color={tint('#FFFFFF')} stroke={2.8} />} title={t('result.new')} onPress={newDraw} />
+          </>
+        ) : (
+          <>
         {shareErr && <Text style={styles.shareErr}>{t('share.error')}</Text>}
-        <Button variant="whats" icon={<Icon name="share" size={22} color="#FFFFFF" stroke={2.6} />} title={sharing ? t('share.preparing') : t('share.button')} onPress={share} disabled={sharing} />
-        <View style={{ height: 6 }} />
-        <Button variant="primary" icon={<Icon name="refresh" size={22} color="#FFFFFF" stroke={3} />} title={t('result.again')} onPress={again} />
-        <View style={{ height: 6 }} />
-        <Button variant="indigo" icon={<Icon name="home" size={20} color="#FFFFFF" stroke={2.8} />} title={t('result.new')} onPress={reset} />
+        {canRemove && (
+          <>
+            <Button variant="primary" compact icon={<Icon name="close" size={20} color={tint('#FFFFFF')} stroke={3.2} />} title={lastTwo ? t('result.removeLast') : t('result.remove')} onPress={removeWinner} />
+            <View style={{ height: 6 }} />
+          </>
+        )}
+        {!params.last && <Button variant={canRemove ? 'indigo' : 'primary'} icon={<Icon name="refresh" size={22} color={tint('#FFFFFF')} stroke={3} />} title={t('result.again')} onPress={again} />}
+        {!params.last && <View style={{ height: 6 }} />}
+        <View style={styles.pair}>
+          <View style={{ flex: 1 }}><Button variant="whats" compact icon={<Icon name="share" size={20} color={tint('#FFFFFF')} stroke={2.6} />} title={sharing ? t('share.preparing') : t('share.button')} onPress={() => setAskInfo(true)} disabled={sharing} /></View>
+          <View style={{ flex: 1 }}><Button variant="indigo" compact icon={<Icon name="home" size={20} color={tint('#FFFFFF')} stroke={2.8} />} title={t('result.new')} onPress={newDraw} /></View>
+        </View>
+          </>
+        )}
       </View>
-      <Animated.View pointerEvents="none" style={[FILL, { backgroundColor: '#DDF3FF', opacity: flash }]} />
+      <Animated.View pointerEvents="none" style={[FILL, { backgroundColor: tint('#DDF3FF'), opacity: flash }]} />
       {/* cartão que vira imagem: fica fora da tela, só para ser fotografado */}
       <View pointerEvents="none" style={{ position: 'absolute', left: -2000, top: 0 }}>
-        <ShareCard ref={cardRef} winner={params.winner} type={params.type} participants={participants} />
+        <ShareCard ref={cardRef} winner={params.winner} type={params.type} participants={participants} info={info} />
       </View>
+      {askInfo && <ShareInfoSheet onCancel={() => setAskInfo(false)} onShare={share} />}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  shareErr: { color: '#FFB3C0', textAlign: 'center', fontWeight: '800', marginBottom: 4 },
+const styles = liveStyles(() => ({
+  pair: { flexDirection: 'row', gap: 8 },
+  shareErr: { color: tint('#FFB3C0'), textAlign: 'center', fontWeight: '800', marginBottom: 4 },
   content: { flex: 1, alignItems: 'center' },
   title: { fontSize: 26, marginTop: 4 },
   stage: { width: STAGE_W, height: STAGE_H, marginTop: 10 },
   trophy: { position: 'absolute', top: 12, left: 0, right: 0, alignItems: 'center' },
   cardWrap: { width: '100%', paddingHorizontal: 18, marginTop: 14 },
   card: {
-    backgroundColor: 'rgba(3,12,70,0.92)', borderRadius: 26, borderWidth: 2, borderColor: neon.ice,
+    backgroundColor: tint('rgba(3,12,70,0.92)'), borderRadius: 26, borderWidth: 2, borderColor: neon.ice,
     paddingTop: 32, paddingBottom: 16, paddingHorizontal: 18, alignItems: 'center',
   },
   ribbonWrap: { position: 'absolute', top: -20, left: 0, right: 0, alignItems: 'center' },
   ribbon: {
-    backgroundColor: colors.yellow, borderRadius: 16, borderWidth: 2, borderColor: '#FFF6C2',
+    backgroundColor: colors.yellow, borderRadius: 16, borderWidth: 2, borderColor: tint('#FFF6C2'),
     paddingHorizontal: 18, paddingVertical: 6,
   },
   ribbonTxt: { color: colors.dark, fontWeight: '900', fontSize: 15, letterSpacing: 1 },
   label: { color: neon.sub, fontSize: 15, fontWeight: '800' },
-  winner: { color: '#FFFFFF', fontSize: 38, fontWeight: '900', textAlign: 'center', marginTop: 2 },
+  winner: { color: tint('#FFFFFF'), fontSize: 38, fontWeight: '900', textAlign: 'center', marginTop: 2 },
   tag: {
     marginTop: 10, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 5,
   },
   tagTxt: { color: colors.dark, fontWeight: '900', fontSize: 13 },
   footer: { position: 'absolute', bottom: 10, left: 18, right: 18 },
-});
+}));

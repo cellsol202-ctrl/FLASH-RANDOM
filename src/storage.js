@@ -5,6 +5,9 @@ export const KEYS = {
   history: '@flash/history',
   sound: '@flash/sound',       // (antigo) som ligado/desligado
   settings: '@flash/settings', // volume, efeitos de tela e idioma
+  shareInfo: '@flash/shareInfo', // local e responsável lembrados para o cartão de compartilhar
+  numberCfg: '@flash/numberCfg', // último intervalo do sorteio de número
+  numberRecent: '@flash/numberRecent', // últimos números sorteados
   welcome: '@flash/welcome',   // já viu a tela de boas-vindas (primeira abertura)
 };
 

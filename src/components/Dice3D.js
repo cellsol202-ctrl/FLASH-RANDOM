@@ -34,6 +34,11 @@ function band(c1, c2) {
 const BANDS = [band(-0.8, -0.3), band(0.22, 0.4)];
 const DARK_BAND = band(0.62, 1.3);
 function rgb(hex) { const n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+// deixa a cor mais viva (k > 1 aumenta a saturação)
+function vivid(c, k) {
+  const l = c[0] * 0.3 + c[1] * 0.59 + c[2] * 0.11;
+  return c.map((v) => Math.max(0, Math.min(255, l + (v - l) * k)));
+}
 function tone(c, k, w = 0) {
   const f = (v) => Math.round(Math.min(255, v * k + (255 - Math.min(255, v * k)) * w));
   return `rgb(${f(c[0])},${f(c[1])},${f(c[2])})`;
@@ -63,7 +68,9 @@ export default function Dice3D({ dice, size: S, width: W, height: H, colorOf, ma
       })}
       {sorted.map((d) => {
         const R = d.R;
-        const base = rgb(colorOf(d.id));
+        const raw = rgb(colorOf(d.id));
+        const isBlack = raw[0] * 0.3 + raw[1] * 0.59 + raw[2] * 0.11 < 70;
+        const base = isBlack ? raw : vivid(raw, 1.3); // cores mais fortes e vivas (o dado preto continua preto)
         const w3 = (v) => [R[0] * v[0] + R[1] * v[1] + R[2] * v[2], R[3] * v[0] + R[4] * v[1] + R[5] * v[2], R[6] * v[0] + R[7] * v[1] + R[8] * v[2]];
         const scale = Hc / (Hc - d.z);
         let hull = '';
@@ -89,8 +96,8 @@ export default function Dice3D({ dice, size: S, width: W, height: H, colorOf, ma
           if (!best || lam > best.lam) best = face;
         }
         const M = material;
-        const dark = base[0] * 0.3 + base[1] * 0.59 + base[2] * 0.11 < 70; // dado preto: aresta e faces mais claras para destacar do fundo
-        const bevel = M === 'metal' ? tone(base, 1, 0.5) : dark ? tone(base, 1, 0.3) : tone(base, 0.86, 0.12);
+        const dark = isBlack; // dado preto: aresta e faces mais claras para destacar do fundo
+        const bevel = M === 'metal' ? tone(base, 1, 0.5) : dark ? tone(base, 1, 0.3) : tone(base, 1, 0.22);
         const parts = [];
         if (glow.includes(d.id)) {
           parts.push(<Ellipse key="g2" cx={d.x} cy={d.y} rx={S * 1.02} ry={S * 1.02} fill="none" stroke="#FFD43B" strokeOpacity={0.3} strokeWidth={9} />);
@@ -100,7 +107,7 @@ export default function Dice3D({ dice, size: S, width: W, height: H, colorOf, ma
         faces.forEach(({ i, F, pt, lam }) => {
           const k = flat, c = flat * 0.78; // c = onde começa a curva do canto da face
           const fd = `M${pt(-c, -k)}L${pt(c, -k)}Q${pt(k, -k)} ${pt(k, -c)}L${pt(k, c)}Q${pt(k, k)} ${pt(c, k)}L${pt(-c, k)}Q${pt(-k, k)} ${pt(-k, c)}L${pt(-k, -c)}Q${pt(-k, -k)} ${pt(-c, -k)}Z`;
-          const fill = M === 'metal' ? tone(base, 0.34 + 0.5 * lam) : dark ? tone(base, 0.7 + 0.5 * lam, 0.04 + 0.1 * lam) : tone(base, 0.58 + 0.46 * lam, lam > 0.75 ? 0.08 : 0);
+          const fill = M === 'metal' ? tone(base, 0.34 + 0.5 * lam) : dark ? tone(base, 0.7 + 0.5 * lam, 0.04 + 0.1 * lam) : tone(base, 0.8 + 0.4 * lam, 0.04 + (lam > 0.55 ? 0.14 : 0.04));
           parts.push(<Path key={`f${i}`} d={fd} fill={fill} />);
           if (M === 'metal') {
             let bd = '';
@@ -130,7 +137,7 @@ export default function Dice3D({ dice, size: S, width: W, height: H, colorOf, ma
             const a = la * flat + (ta * cs * 0.36 + (la / ln) * sn * 0.1) * flat, b = lb * flat + (tb * cs * 0.36 + (lb / ln) * sn * 0.1) * flat;
             gd += `${j ? 'L' : 'M'}${pt(a, b)}`;
           });
-          parts.push(<Path key="gloss" d={`${gd}Z`} fill="#FFFFFF" fillOpacity={0.42} />);
+          parts.push(<Path key="gloss" d={`${gd}Z`} fill="#FFFFFF" fillOpacity={0.6} />);
         }
         return <G key={d.id} opacity={dimmed.includes(d.id) ? 0.38 : 1}>{parts}</G>;
       })}

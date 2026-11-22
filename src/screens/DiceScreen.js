@@ -17,6 +17,8 @@ import { vibrate } from '../a11y';
 import { announce } from '../a11y';
 import { sk, G } from '../skin';
 
+import { tint, liveStyles } from '../themes';
+import { planHeats, racersOf, isHeat, resultParams } from '../heats';
 const BORDER = 4;   // borda do tabuleiro (2 de cada lado)
 const MATERIAL = 'plastic'; // visual dos dados: 'plastic' ou 'metal' (o metálico fica pronto para usar depois)
 const SPEED = 0.85; // velocidade da reprodução (um pouco de câmera lenta dá mais peso e suspense)
@@ -37,8 +39,12 @@ function Banner({ icon, text, bottom }) {
   );
 }
 
-export default function DiceScreen({ participants, setParticipants, back, replace, addHistory }) {
+export default function DiceScreen({ params, participants: all, setParticipants, back, replace, addHistory }) {
   useSounds(['dice', 'result']);
+  // mais de 12 participantes: rola em baterias de 12 e os vencedores fazem a final
+  const plan = useMemo(() => (params && params.plan) || planHeats(all), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const participants = useMemo(() => racersOf(plan, all), [plan, all]);
+  const heatLabel = plan ? (plan.final ? t('heat.final') : t('heat.label', { n: plan.idx + 1, total: plan.groups.length })) : '';
   const [, force] = useReducer((x) => x + 1, 0);
   const [board, setBoard] = useState({ w: 0, h: 0 });
   const [phase, setPhase] = useState('idle'); // idle | rolling | tie | done
@@ -126,8 +132,8 @@ export default function DiceScreen({ participants, setParticipants, back, replac
       setPhaseBoth('done');
       setBanner({ icon: 'trophy', text: t('dice.win', { name: shortName(name, 14), max }), bottom });
       announce(t('dice.win', { name, max }));
-      addHistory(`${name} (${max}${roundRef.current > 1 ? `, ${t('dice.rounds', { n: roundRef.current })}` : ''})`, 'dice');
-      later(() => replace('Result', { winner: name, type: 'dice', color: DICE_COLORS[colorsRef.current[top[0]]] }), 1800);
+      if (!isHeat(plan)) addHistory(`${name} (${max}${roundRef.current > 1 ? `, ${t('dice.rounds', { n: roundRef.current })}` : ''})`, 'dice'); // as baterias não entram no histórico
+      later(() => replace('Result', resultParams(plan, participants[top[0]], 'dice', DICE_COLORS[colorsRef.current[top[0]]])), 1800);
     } else {
       setPhaseBoth('tie');
       play('tie');
@@ -179,6 +185,7 @@ export default function DiceScreen({ participants, setParticipants, back, replac
   // ----- trocar a cor do dado: segurar o nome, deslizar para os lados e soltar -----
   const BAR_LEFT = 14 + 2 + 8 + 2 + 8;        // margem e borda do tabuleiro + margem, borda e espaço interno da paleta
   const BAR_W = winW - BAR_LEFT * 2;          // largura ocupada pelas cores
+  const SW = Math.min(17, Math.floor(BAR_W / DICE_COLORS.length) - 2); // com 21 cores, as bolinhas da paleta encolhem para caber
   const endPick = (commit) => {
     const st = picking.current;
     if (!st) return;
@@ -187,7 +194,8 @@ export default function DiceScreen({ participants, setParticipants, back, replac
     if (!st.open) return;
     if (commit && st.k !== baseRef.current[st.i]) {
       const next = pickColor(baseRef.current, st.i, st.k);
-      setParticipants((list) => list.map((p, x) => ({ ...p, color: DICE_COLORS[next[x]] })));
+      // a cor vale para quem está na bateria (pelo id, pois a lista inteira pode ser maior)
+      setParticipants((list) => list.map((p) => { const x = participants.findIndex((r) => r.id === p.id); return x >= 0 ? { ...p, color: DICE_COLORS[next[x]] } : p; }));
     }
     setPick(null);
   };
@@ -228,7 +236,7 @@ export default function DiceScreen({ participants, setParticipants, back, replac
       <Header onBack={back} />
       <ScreenTitle text={t('mode.dice')} fontSize={38} />
       <Text style={styles.sub}>
-        {phase === 'idle' ? t('dice.idle') : round > 1 ? t('dice.tiebreak', { n: round }) : t('dice.round', { n: 1 })}
+        {heatLabel ? `${heatLabel} · ` : ''}{phase === 'idle' ? t('dice.idle') : round > 1 ? t('dice.tiebreak', { n: round }) : t('dice.round', { n: 1 })}
       </Text>
 
       <Pressable
@@ -252,7 +260,7 @@ export default function DiceScreen({ participants, setParticipants, back, replac
             <View style={styles.swatches}>
               {DICE_COLORS.map((c, k) => (
                 <View key={c} style={styles.swatchCell}>
-                  <View style={[styles.swatch, { backgroundColor: c }, k === pick.k && styles.swatchOn]} />
+                  <View style={[styles.swatch, { backgroundColor: c }, SW < 17 && { width: SW, height: SW, borderRadius: SW / 2 }, k === pick.k && styles.swatchOn]} />
                 </View>
               ))}
             </View>
@@ -278,50 +286,50 @@ export default function DiceScreen({ participants, setParticipants, back, replac
       {phase === 'idle' && <Text style={styles.colorHint} numberOfLines={1} adjustsFontSizeToFit>{t('dice.colorHint')}</Text>}
 
       <View style={styles.footer}>
-        <Button title={t('dice.roll')} icon={<Icon name="dice" size={22} color="#FFFFFF" stroke={2.4} />} onPress={roll} disabled={phase !== 'idle'} />
+        <Button title={t('dice.roll')} icon={<Icon name="dice" size={22} color={tint('#FFFFFF')} stroke={2.4} />} onPress={roll} disabled={phase !== 'idle'} />
       </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const styles = liveStyles(() => ({
   title: { fontSize: 28, textAlign: 'center' },
   sub: { color: neon.sub, textAlign: 'center', marginTop: 0, fontWeight: '700', paddingHorizontal: 16 },
   board: {
-    flex: 1, marginHorizontal: 14, marginTop: 10, borderRadius: 28, backgroundColor: 'rgba(3,12,64,0.55)',
+    flex: 1, marginHorizontal: 14, marginTop: 10, borderRadius: 28, backgroundColor: tint('rgba(3,12,64,0.55)'),
     borderWidth: 2, borderColor: neon.border, overflow: 'hidden',
   },
   decor: {
     position: 'absolute', left: '50%', top: '50%', width: 220, height: 220, marginLeft: -110, marginTop: -110,
-    borderRadius: 110, borderWidth: 6, borderColor: 'rgba(255,255,255,0.1)',
+    borderRadius: 110, borderWidth: 6, borderColor: tint('rgba(255,255,255,0.1)'),
   },
   hint: {
     position: 'absolute', bottom: 12, alignSelf: 'center', color: '#fff', fontWeight: '800', opacity: 0.8,
   },
   banner: {
-    position: 'absolute', alignSelf: 'center', backgroundColor: 'rgba(2,10,60,0.95)', borderRadius: 18,
+    position: 'absolute', alignSelf: 'center', backgroundColor: tint('rgba(2,10,60,0.95)'), borderRadius: 18,
     borderWidth: 2, borderColor: neon.cyan, paddingHorizontal: 18, paddingVertical: 10,
   },
-  bannerTxt: { color: '#FFFFFF', fontSize: 18, fontWeight: '900', textAlign: 'center' },
+  bannerTxt: { color: tint('#FFFFFF'), fontSize: 18, fontWeight: '900', textAlign: 'center' },
   legend: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6, paddingHorizontal: 14, paddingTop: 10 },
   chip: {
-    flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(4,16,80,0.7)', borderRadius: 14,
+    flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: tint('rgba(4,16,80,0.7)'), borderRadius: 14,
     borderWidth: 1.5, borderColor: neon.border, paddingHorizontal: 10, paddingVertical: 6, maxWidth: 150,
   },
-  chipOn: { borderColor: neon.cyan, backgroundColor: 'rgba(30,107,255,0.55)' },
+  chipOn: { borderColor: neon.cyan, backgroundColor: tint('rgba(30,107,255,0.55)') },
   dot: { width: 14, height: 14, borderRadius: 7, borderWidth: 1.5, borderColor: neon.ice },
   chipName: { color: '#fff', fontSize: 12, fontWeight: '800', flexShrink: 1 },
   colorHint: { color: neon.sub, fontSize: 12, fontWeight: '700', textAlign: 'center', marginTop: 6, paddingHorizontal: 16, opacity: 0.9 },
   palette: {
-    position: 'absolute', left: 8, right: 8, backgroundColor: 'rgba(2,10,60,0.96)', borderRadius: 18,
+    position: 'absolute', left: 8, right: 8, backgroundColor: tint('rgba(2,10,60,0.96)'), borderRadius: 18,
     borderWidth: 2, borderColor: neon.cyan, paddingHorizontal: 8, paddingTop: 8, paddingBottom: 8,
   },
-  paletteTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: '900', textAlign: 'center' },
+  paletteTitle: { color: tint('#FFFFFF'), fontSize: 15, fontWeight: '900', textAlign: 'center' },
   paletteSub: { color: neon.sub, fontSize: 11, fontWeight: '700', textAlign: 'center' },
   swatches: { flexDirection: 'row', height: 50, alignItems: 'center' },
   swatchCell: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  swatch: { width: 17, height: 17, borderRadius: 9, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.55)' },
-  swatchOn: { width: 34, height: 34, borderRadius: 17, borderWidth: 3, borderColor: '#FFFFFF' },
+  swatch: { width: 17, height: 17, borderRadius: 9, borderWidth: 1.5, borderColor: tint('rgba(255,255,255,0.55)') },
+  swatchOn: { width: 34, height: 34, borderRadius: 17, borderWidth: 3, borderColor: tint('#FFFFFF') },
   chipVal: { color: colors.dark, backgroundColor: colors.yellow, fontSize: 12, fontWeight: '900', paddingHorizontal: 6, borderRadius: 8, overflow: 'hidden' },
   footer: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 14 },
-});
+}));

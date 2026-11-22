@@ -5,11 +5,12 @@ import { neon } from '../theme';
 import { getSettings } from '../settings';
 
 
+import { tint, liveStyles } from '../themes';
 // Barra deslizante (0 a 1) no estilo neon. Arraste ou toque em qualquer ponto da barra.
 // onChange é chamado enquanto arrasta; onRelease quando solta o dedo.
 // onDragStart/onDragEnd avisam a tela para travar a rolagem enquanto o dedo está na barra.
 // colors = cores do preenchimento; o polegar acompanha o dedo na hora (valor local), sem esperar a tela redesenhar.
-export default function Slider({ value, onChange, onRelease, onDragStart, onDragEnd, step = 0.05, disabled = false, colors = ['#42E0FF', '#1E6BFF'], label, valueText }) {
+export default function Slider({ value, onChange, onRelease, onDragStart, onDragEnd, step = 0.05, disabled = false, colors = [tint('#42E0FF'), tint('#1E6BFF')], label, valueText }) {
   const big = getSettings().bigTouch; // "controles maiores"
   const THUMB = big ? 42 : 30;
   const [w, setW] = useState(0);
@@ -59,19 +60,19 @@ export default function Slider({ value, onChange, onRelease, onDragStart, onDrag
         <LinearGradient colors={colors} start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }} style={[styles.fill, { width: disabled ? 0 : THUMB / 2 + span * shown }]} />
       </View>
       {!disabled && <View pointerEvents="none" style={[styles.thumbGlow, { left: span * shown - 5, top: big ? 6 : 2, width: THUMB + 10, height: THUMB + 10, borderRadius: (THUMB + 10) / 2 }]}>
-        <LinearGradient colors={['#FFFFFF', '#BDEBFF', '#6FD0FF']} style={[styles.thumb, { width: THUMB, height: THUMB, borderRadius: THUMB / 2 }]} />
+        <LinearGradient colors={[tint('#FFFFFF'), tint('#BDEBFF'), tint('#6FD0FF')]} style={[styles.thumb, { width: THUMB, height: THUMB, borderRadius: THUMB / 2 }]} />
       </View>}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const styles = liveStyles(() => ({
   wrap: { height: 44, justifyContent: 'center' },
-  track: { height: 12, borderRadius: 6, backgroundColor: 'rgba(2,7,34,0.8)', borderWidth: 1.5, borderColor: neon.border, overflow: 'hidden' },
+  track: { height: 12, borderRadius: 6, backgroundColor: tint('rgba(2,7,34,0.8)'), borderWidth: 1.5, borderColor: neon.border, overflow: 'hidden' },
   fill: { height: '100%' },
   thumbGlow: {
     position: 'absolute', top: 2,
-    backgroundColor: 'rgba(46,139,255,0.3)', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: tint('rgba(46,139,255,0.3)'), alignItems: 'center', justifyContent: 'center',
   },
-  thumb: { borderWidth: 2, borderColor: '#FFFFFF' },
-});
+  thumb: { borderWidth: 2, borderColor: tint('#FFFFFF') },
+}));

@@ -10,9 +10,10 @@ import NeonTitle from '../../components/NeonTitle';
 import NeonButton from '../../components/NeonButton';
 import { playTap } from '../../sounds';
 import { t } from '../../i18n';
-import { neon } from '../../theme';
-import { OPTIONS, modeLabel, useFloat } from './shared';
+import { neon, colors } from '../../theme';
+import { OPTIONS, modeLabel, useFloat, openMode } from './shared';
 
+import { tint, liveStyles } from '../../themes';
 // Perfil "Normal": a Home de sempre, com uma lista de cartões (nome + explicação) e o botão Histórico embaixo.
 export default function HomeNormal({ navigate }) {
   const { width } = useWindowDimensions();
@@ -26,8 +27,8 @@ export default function HomeNormal({ navigate }) {
         accessibilityLabel={t('a11y.settings')}
         style={({ pressed }) => [styles.soundWrap, pressed && { transform: [{ scale: 0.94 }] }]}
       >
-        <LinearGradient colors={['#6FD0FF', '#1E6BFF', '#0B34D0']} style={styles.soundBtn}>
-          <Icon name="settings" size={27} color="#FFFFFF" stroke={2} />
+        <LinearGradient colors={[tint('#6FD0FF'), tint('#1E6BFF'), tint('#0B34D0')]} style={styles.soundBtn}>
+          <Icon name="settings" size={27} color={tint('#FFFFFF')} stroke={2} />
         </LinearGradient>
       </Pressable>
       <Animated.View style={{ transform: [{ translateY: ty }, { scale: sc }] }}>
@@ -41,16 +42,19 @@ export default function HomeNormal({ navigate }) {
           <AnimatedIn key={o.mode} delay={120 + i * 90} style={styles.slot}>
             <Glow radius={18} color={o.accent} thin fill style={styles.glow}>
               <Pressable
-                onPress={() => { playTap(); navigate('Participants', { mode: o.mode }); }}
+                onPress={() => { playTap(); openMode(navigate, o); }}
                 accessibilityRole="button"
                 accessibilityLabel={modeLabel(o)}
                 style={({ pressed }) => [styles.card, { borderColor: o.accent }, pressed && { opacity: 0.85, transform: [{ scale: 0.985 }] }]}
               >
-                <LinearGradient colors={[o.accent, o.deep]} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={[styles.iconBox, { borderColor: '#FFFFFF' }]}>
-                  <Icon name={o.icon} size={27} color="#FFFFFF" stroke={2.7} />
+                <LinearGradient colors={[o.accent, o.deep]} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={[styles.iconBox, { borderColor: tint('#FFFFFF') }]}>
+                  <Icon name={o.icon} size={36} color={tint('#FFFFFF')} stroke={2.2} />
                 </LinearGradient>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.cardTitle} numberOfLines={1} adjustsFontSizeToFit>{t(`mode.${o.mode}`)}</Text>
+                  <View style={styles.titleRow}>
+                    <Text style={[styles.cardTitle, { flexShrink: 1 }]} numberOfLines={1} adjustsFontSizeToFit>{t(`mode.${o.mode}`)}</Text>
+                    {o.isNew && <View style={styles.newBadge}><Text style={styles.newTxt}>{t('home.new')}</Text></View>}
+                  </View>
                   <Text style={styles.cardSub} numberOfLines={1} adjustsFontSizeToFit>{t(`modeSub.${o.mode}`)}</Text>
                 </View>
                 <Icon name="chevronRight" size={26} color={o.accent} stroke={3.2} />
@@ -76,21 +80,24 @@ export default function HomeNormal({ navigate }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = liveStyles(() => ({
   container: { alignItems: 'center', paddingHorizontal: 18, paddingTop: 14, paddingBottom: 14, flexGrow: 1 },
   soundWrap: { position: 'absolute', top: 12, left: 16, zIndex: 5 },
   soundBtn: { width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: neon.ice, alignItems: 'center', justifyContent: 'center' },
   tagline: { color: neon.sub, fontSize: 14, textAlign: 'center', marginTop: 2, marginBottom: 4, fontWeight: '600' },
   // a lista ocupa todo o espaço entre o título e o botão Histórico; os cartões dividem essa altura por igual
-  list: { width: '100%', flex: 1, marginTop: 8 },
+  list: { width: '100%', flex: 1, marginTop: 8, minHeight: 7 * 68 },
   slot: { width: '100%', flex: 1, minHeight: 62, maxHeight: 104, paddingVertical: 3 },
   glow: { flex: 1 },
   card: {
     flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: neon.panel,
     borderColor: neon.border, borderWidth: 2, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 6,
   },
-  iconBox: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
-  cardTitle: { color: '#FFFFFF', fontSize: 17, fontWeight: '900' },
+  iconBox: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  newBadge: { backgroundColor: colors.yellow, borderRadius: 9, paddingHorizontal: 7, paddingVertical: 1 },
+  newTxt: { color: colors.dark, fontSize: 11, fontWeight: '900' },
+  cardTitle: { color: tint('#FFFFFF'), fontSize: 17, fontWeight: '900' },
   cardSub: { color: neon.sub, fontSize: 12.5, marginTop: 1, fontWeight: '600' },
   bottom: { width: '100%', paddingTop: 8 },
-});
+}));

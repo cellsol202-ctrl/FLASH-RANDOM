@@ -4,6 +4,7 @@ import NeonTitle from './NeonTitle';
 import Text from './Text';
 import { isGlass } from '../skin';
 
+import { tint } from '../themes';
 // Título de tela: metálico com brilho (perfil normal) ou branco liso com sombra suave (perfil vidro).
 // Encolhe sozinho se o texto for longo.
 export default function ScreenTitle({ text, fontSize = 36, line = true, italic = true }) {
@@ -15,7 +16,7 @@ export default function ScreenTitle({ text, fontSize = 36, line = true, italic =
           accessibilityRole="header"
           numberOfLines={1}
           adjustsFontSizeToFit
-          style={{ color: '#FFFFFF', fontSize: Math.round(fontSize * 0.8), fontWeight: '900', textAlign: 'center', textShadowColor: 'rgba(0,0,60,0.5)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8 }}
+          style={{ color: tint('#FFFFFF'), fontSize: Math.round(fontSize * 0.8), fontWeight: '900', textAlign: 'center', textShadowColor: tint('rgba(0,0,60,0.5)'), textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8 }}
         >{text}</Text>
       </View>
     );
