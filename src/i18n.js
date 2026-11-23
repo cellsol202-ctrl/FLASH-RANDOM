@@ -59,7 +59,7 @@ const pt = {
   'coin.start': 'JOGAR A MOEDA', 'coin.flipping': 'GIRANDO...', 'coin.flipping2': 'Girando...',
   'coin.heads': 'Cara', 'coin.tails': 'Coroa', 'coin.result': 'Deu {face}! {name} venceu!',
 
-  'result.title': 'Resultado do sorteio', 'result.champion': '1º LUGAR', 'result.label': 'Quem venceu foi',
+  'result.title': 'Resultado do sorteio', 'result.champion': '1º LUGAR', 'result.winner': 'CAMPEÃO', 'trophy.first': '1º LUGAR', 'result.label': 'Quem venceu foi',
   'result.again': 'SORTEAR NOVAMENTE', 'result.new': 'NOVO SORTEIO',
   'result.remove': 'TIRAR DA LISTA E SORTEAR', 'result.removeLast': 'TIRAR DA LISTA', 'result.lastOne': 'Quem sobrou foi',
   'share.button': 'COMPARTILHAR', 'share.preparing': 'PREPARANDO...', 'share.title': 'Compartilhar resultado', 'share.error': 'Não foi possível compartilhar agora.', 'share.participants': 'Participantes ({n})',
@@ -138,6 +138,15 @@ const pt = {
   'number.previous': 'Anteriores',
   'first.fingersOf': '{n} de {max} dedos na tela',
   'first.waitAll': 'Faltam {n} para começar',
+
+  // botão flutuante de estilo (roleta e dados)
+  'look.btn': 'Estilo visual',
+  'look.hint': 'Segure por 1 segundo para escolher o estilo',
+  'look.title.wheel': 'Estilo da roleta', 'look.title.dice': 'Estilo dos dados',
+  'look.wheel.atual': 'Clássica', 'look.wheel.neon': 'Neon violeta', 'look.wheel.rubi': 'Rubi e azul', 'look.wheel.arco': 'Arco-íris', 'look.wheel.laranja': 'Laranja',
+  'look.dice.plastic': 'Clássico', 'look.dice.neon': 'Vidro neon', 'look.dice.cartoon': 'Plástico com contorno', 'look.dice.gold': 'Aro dourado',
+  'look.close': 'Fechar', 'look.selected': 'selecionado', 'look.chosen': 'Estilo {name}',
+  'look.moveL': 'Mover para a esquerda', 'look.moveR': 'Mover para a direita', 'look.moveU': 'Mover para cima', 'look.moveD': 'Mover para baixo',
 };
 
 const en = {
@@ -194,7 +203,7 @@ const en = {
   'coin.start': 'FLIP THE COIN', 'coin.flipping': 'FLIPPING...', 'coin.flipping2': 'Flipping...',
   'coin.heads': 'Heads', 'coin.tails': 'Tails', 'coin.result': '{face}! {name} wins!',
 
-  'result.title': 'Draw result', 'result.champion': 'CHAMPION', 'result.label': 'And the winner is',
+  'result.title': 'Draw result', 'result.champion': 'CHAMPION', 'result.winner': 'CHAMPION', 'trophy.first': '1ST PLACE', 'result.label': 'And the winner is',
   'result.again': 'DRAW AGAIN', 'result.new': 'NEW DRAW',
   'result.remove': 'REMOVE FROM LIST & DRAW', 'result.removeLast': 'REMOVE FROM LIST', 'result.lastOne': 'The one left is',
   'share.button': 'SHARE', 'share.preparing': 'PREPARING...', 'share.title': 'Share result', 'share.error': 'Could not share right now.', 'share.participants': 'Participants ({n})',
@@ -273,6 +282,15 @@ const en = {
   'number.previous': 'Previous',
   'first.fingersOf': '{n} of {max} fingers on screen',
   'first.waitAll': '{n} more to start',
+
+  // floating style button (roulette and dice)
+  'look.btn': 'Visual style',
+  'look.hint': 'Hold for 1 second to choose the style',
+  'look.title.wheel': 'Wheel style', 'look.title.dice': 'Dice style',
+  'look.wheel.atual': 'Classic', 'look.wheel.neon': 'Violet neon', 'look.wheel.rubi': 'Ruby and blue', 'look.wheel.arco': 'Rainbow', 'look.wheel.laranja': 'Orange',
+  'look.dice.plastic': 'Classic', 'look.dice.neon': 'Neon glass', 'look.dice.cartoon': 'Outlined plastic', 'look.dice.gold': 'Gold rim',
+  'look.close': 'Close', 'look.selected': 'selected', 'look.chosen': '{name} style',
+  'look.moveL': 'Move left', 'look.moveR': 'Move right', 'look.moveU': 'Move up', 'look.moveD': 'Move down',
 };
 
 const es = {
@@ -329,7 +347,7 @@ const es = {
   'coin.start': 'LANZAR LA MONEDA', 'coin.flipping': 'GIRANDO...', 'coin.flipping2': 'Girando...',
   'coin.heads': 'Cara', 'coin.tails': 'Cruz', 'coin.result': '¡Salió {face}! ¡{name} gana!',
 
-  'result.title': 'Resultado del sorteo', 'result.champion': 'PRIMER LUGAR', 'result.label': 'La victoria es para',
+  'result.title': 'Resultado del sorteo', 'result.champion': 'PRIMER LUGAR', 'result.winner': 'CAMPEÓN', 'trophy.first': '1.º LUGAR', 'result.label': 'La victoria es para',
   'result.again': 'SORTEAR DE NUEVO', 'result.new': 'NUEVO SORTEO',
   'result.remove': 'QUITAR DE LA LISTA Y SORTEAR', 'result.removeLast': 'QUITAR DE LA LISTA', 'result.lastOne': 'El que quedó es',
   'share.button': 'COMPARTIR', 'share.preparing': 'PREPARANDO...', 'share.title': 'Compartir resultado', 'share.error': 'No se pudo compartir ahora.', 'share.participants': 'Participantes ({n})',
@@ -408,6 +426,15 @@ const es = {
   'number.previous': 'Anteriores',
   'first.fingersOf': '{n} de {max} dedos en pantalla',
   'first.waitAll': 'Faltan {n} para empezar',
+
+  // botón flotante de estilo (ruleta y dados)
+  'look.btn': 'Estilo visual',
+  'look.hint': 'Mantén pulsado 1 segundo para elegir el estilo',
+  'look.title.wheel': 'Estilo de la ruleta', 'look.title.dice': 'Estilo de los dados',
+  'look.wheel.atual': 'Clásica', 'look.wheel.neon': 'Neón violeta', 'look.wheel.rubi': 'Rubí y azul', 'look.wheel.arco': 'Arcoíris', 'look.wheel.laranja': 'Naranja',
+  'look.dice.plastic': 'Clásico', 'look.dice.neon': 'Cristal neón', 'look.dice.cartoon': 'Plástico con contorno', 'look.dice.gold': 'Borde dorado',
+  'look.close': 'Cerrar', 'look.selected': 'seleccionado', 'look.chosen': 'Estilo {name}',
+  'look.moveL': 'Mover a la izquierda', 'look.moveR': 'Mover a la derecha', 'look.moveU': 'Mover hacia arriba', 'look.moveD': 'Mover hacia abajo',
 };
 
 const de = {
@@ -464,7 +491,7 @@ const de = {
   'coin.start': 'MÜNZE WERFEN', 'coin.flipping': 'DREHT SICH...', 'coin.flipping2': 'Dreht sich...',
   'coin.heads': 'Kopf', 'coin.tails': 'Zahl', 'coin.result': '{face}! {name} gewinnt!',
 
-  'result.title': 'Ergebnis der Auslosung', 'result.champion': '1. PLATZ', 'result.label': 'Gewonnen hat',
+  'result.title': 'Ergebnis der Auslosung', 'result.champion': '1. PLATZ', 'result.winner': 'SIEGER', 'trophy.first': '1. PLATZ', 'result.label': 'Gewonnen hat',
   'result.again': 'NOCHMAL AUSLOSEN', 'result.new': 'NEUE AUSLOSUNG',
   'result.remove': 'AUS LISTE NEHMEN & LOSEN', 'result.removeLast': 'AUS LISTE NEHMEN', 'result.lastOne': 'Übrig geblieben ist',
   'share.button': 'TEILEN', 'share.preparing': 'WIRD VORBEREITET...', 'share.title': 'Ergebnis teilen', 'share.error': 'Teilen ist gerade nicht möglich.', 'share.participants': 'Teilnehmende ({n})',
@@ -543,6 +570,15 @@ const de = {
   'number.previous': 'Vorherige',
   'first.fingersOf': '{n} von {max} Fingern auf dem Bildschirm',
   'first.waitAll': 'Noch {n} bis zum Start',
+
+  // schwebender Stil-Button (Glücksrad und Würfel)
+  'look.btn': 'Optik',
+  'look.hint': '1 Sekunde gedrückt halten, um den Stil zu wählen',
+  'look.title.wheel': 'Stil des Glücksrads', 'look.title.dice': 'Stil der Würfel',
+  'look.wheel.atual': 'Klassisch', 'look.wheel.neon': 'Violettes Neon', 'look.wheel.rubi': 'Rubin und Blau', 'look.wheel.arco': 'Regenbogen', 'look.wheel.laranja': 'Orange',
+  'look.dice.plastic': 'Klassisch', 'look.dice.neon': 'Neon-Glas', 'look.dice.cartoon': 'Kunststoff mit Kontur', 'look.dice.gold': 'Goldrand',
+  'look.close': 'Schließen', 'look.selected': 'ausgewählt', 'look.chosen': 'Stil {name}',
+  'look.moveL': 'Nach links', 'look.moveR': 'Nach rechts', 'look.moveU': 'Nach oben', 'look.moveD': 'Nach unten',
 };
 
 export const DICT = { pt, en, es, de };

@@ -28,7 +28,7 @@ export default function Header({ onBack, neonStyle = true }) {
           )
         ) : null}
       </View>
-      <View accessible accessibilityRole="image" accessibilityLabel="Flash Random"><Logo width={130} /></View>
+      <Logo width={130} />
       <View style={styles.side} />
     </View>
   );

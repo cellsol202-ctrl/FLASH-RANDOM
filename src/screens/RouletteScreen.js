@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Animated, Easing, PanResponder, useWindowDimensions, StyleSheet } from 'react-native';
 import Text from '../components/Text';
-import Svg, { Path, Circle, Polygon, Text as SvgText } from 'react-native-svg';
+import Svg, { Path, Circle, Polygon, Defs, RadialGradient, Stop, Text as SvgText } from 'react-native-svg';
+import { lookOf, rimWidth, WheelRim, WheelHub, WheelPointer } from '../components/WheelArt';
 import Header from '../components/Header';
 import ScreenTitle from '../components/ScreenTitle';
 import LightningField from '../components/LightningField';
 import { makeBolt } from '../lightning';
-import { duration, getSettings } from '../settings';
+import { duration, getSettings, useSettings } from '../settings';
+import StyleButton from '../components/StyleButton';
 import { t } from '../i18n';
 import Button from '../components/Button';
 import { colors, PALETTE, FILL, neon, colorOf, textOn } from '../theme';
@@ -26,29 +28,70 @@ const pt = (c, deg, rad) => {
 };
 
 // Fatias coloridas (não re-renderiza enquanto gira)
-const Wheel = React.memo(function Wheel({ participants, size }) {
+const Wheel = React.memo(function Wheel({ participants, size, look }) {
   const n = participants.length;
   const slice = 360 / n;
   const c = size / 2;
-  const r = c - 3 - RIM;
+  const u = size / 380;
+  const r = c - 3 - rimWidth(look, size, RIM);
   // nomes na vertical (ao longo do raio, lendo do centro para a borda): cabe bem mais letras do que de lado
   const rIn = r * 0.26, rOut = r * 0.95;
   const fontSize = Math.max(9, Math.min(17, r * 0.3 * ((2 * Math.PI) / n) * 0.8)); // fatias estreitas = letra menor
   const maxChars = Math.max(4, Math.floor((rOut - rIn) / (fontSize * 0.58)));
+  const cols = participants.map((p, i) => {
+    let color = colorOf(p, i);
+    if (!p.tone && i === n - 1 && i % PALETTE.length === 0) color = PALETTE[5]; // evita última igual à primeira
+    return color;
+  });
+  const dv = look ? { c: look.divider.c, w: look.divider.w * Math.max(0.8, u) } : { c: colors.outline, w: 3 };
+  // raios finos (claros e escuros, alternados) em cada fatia, sem passar pela linha do nome
+  let rayL = '', rayD = '';
+  if (look && look.rays) {
+    const k = Math.min(28, 2 * Math.ceil(slice / 14));
+    participants.forEach((_, i) => {
+      for (let j = 0; j < k; j++) {
+        const deg = i * slice + ((j + 0.5) * slice) / k;
+        const seg = `M ${pt(c, deg, r * 0.2)} L ${pt(c, deg, r * 0.97)} `;
+        if (j % 2) rayD += seg; else rayL += seg;
+      }
+    });
+  }
   return (
     <Svg width={size} height={size} style={FILL}>
+      {look && (
+        <Defs>
+          <RadialGradient id="wsh" cx="0.5" cy="0.5" r="0.5">
+            <Stop offset="0" stopColor="#000814" stopOpacity={look.shade} />
+            <Stop offset="0.55" stopColor="#000814" stopOpacity={0} />
+            <Stop offset="1" stopColor="#FFFFFF" stopOpacity={0.12} />
+          </RadialGradient>
+        </Defs>
+      )}
       {participants.map((p, i) => {
         const a0 = i * slice;
         const a1 = (i + 1) * slice;
         const d = `M ${c} ${c} L ${pt(c, a0, r)} A ${r} ${r} 0 ${slice > 180 ? 1 : 0} 1 ${pt(c, a1, r)} Z`;
-        let color = colorOf(p, i);
-        if (!p.tone && i === n - 1 && i % PALETTE.length === 0) color = PALETTE[5]; // evita última igual à primeira
+        return <Path key={`s${p.id}`} d={d} fill={cols[i]} stroke={dv.c} strokeWidth={dv.w} strokeLinejoin="round" />;
+      })}
+      {look && <Circle cx={c} cy={c} r={r} fill="url(#wsh)" />}
+      {look && look.rays && <Path d={rayL} stroke="#FFFFFF" strokeOpacity={0.1} strokeWidth={1} fill="none" />}
+      {look && look.rays && <Path d={rayD} stroke="#000814" strokeOpacity={0.12} strokeWidth={1} fill="none" />}
+      {participants.map((p, i) => {
+        const a0 = i * slice;
+        const color = cols[i];
         const label = shortName(p.name, maxChars);
+        const tr = `rotate(${a0 + slice / 2 - 90}, ${c}, ${c})`;
+        const fill = textOn(color);
         return (
-          <React.Fragment key={p.id}>
-            <Path d={d} fill={color} stroke={colors.outline} strokeWidth={3} strokeLinejoin="round" />
-            <SvgText x={c + rOut} y={c + fontSize * 0.36} fill={textOn(color)} fontSize={fontSize} fontFamily="Nunito_900Black"
-              textAnchor="end" transform={`rotate(${a0 + slice / 2 - 90}, ${c}, ${c})`}>
+          <React.Fragment key={`t${p.id}`}>
+            {/* contorno do nome (só nos estilos novos): letra clara com borda escura e vice-versa, lê bem sobre qualquer cor */}
+            {look && (
+              <SvgText x={c + rOut} y={c + fontSize * 0.36} fill="none" stroke={fill === '#FFFFFF' ? '#0A1445' : '#FFFFFF'} strokeOpacity={0.9}
+                strokeWidth={fontSize * 0.2} strokeLinejoin="round" fontSize={fontSize} fontFamily="Nunito_900Black" textAnchor="end" transform={tr}>
+                {label}
+              </SvgText>
+            )}
+            <SvgText x={c + rOut} y={c + fontSize * 0.36} fill={fill} fontSize={fontSize} fontFamily="Nunito_900Black" textAnchor="end" transform={tr}>
               {label}
             </SvgText>
           </React.Fragment>
@@ -146,6 +189,8 @@ export default function RouletteScreen({ participants, back, replace, addHistory
   const size = Math.max(180, Math.min(width - 40, 380, zoneH ? zoneH - 34 - 78 - (showArrows ? 54 : 0) : 380));
   const n = participants.length;
   const slice = 360 / n;
+  const { wheelLook } = useSettings();
+  const look = lookOf(wheelLook); // null = visual de sempre (o estilo vem do botão flutuante)
 
   const rot = useRef(new Animated.Value(0)).current;
   const tick = useRef(new Animated.Value(0)).current; // balanço do ponteiro
@@ -284,15 +329,20 @@ export default function RouletteScreen({ participants, back, replace, addHistory
       <View {...pan.panHandlers} style={styles.zone} onLayout={(e) => { setZoneY(e.nativeEvent.layout.y); setZoneH(e.nativeEvent.layout.height); }}>
         <View style={styles.zoneInner} onLayout={(e) => setInnerY(e.nativeEvent.layout.y)}>
           <Animated.View style={[styles.pointer, { transform: [{ rotate: pointerRot }] }]}>
-            <Svg width={50} height={60} viewBox="0 0 50 60">
-              <Polygon points="25,58 4,18 46,18" fill="#FFFFFF" stroke={colors.outline} strokeWidth={4} strokeLinejoin="round" />
-              <Circle cx={25} cy={17} r={13} fill={colors.yellow} stroke={colors.outline} strokeWidth={4} />
-            </Svg>
+            {look ? <WheelPointer look={look} /> : (
+              <Svg width={50} height={60} viewBox="0 0 50 60">
+                <Polygon points="25,58 4,18 46,18" fill="#FFFFFF" stroke={colors.outline} strokeWidth={4} strokeLinejoin="round" />
+                <Circle cx={25} cy={17} r={13} fill={colors.yellow} stroke={colors.outline} strokeWidth={4} />
+              </Svg>
+            )}
           </Animated.View>
-          <Animated.View style={{ width: size, height: size, transform: [{ rotate }] }}>
-            <Wheel participants={participants} size={size} />
-            <Rim size={size} />
-          </Animated.View>
+          <View style={{ width: size, height: size }}>
+            <Animated.View style={{ width: size, height: size, transform: [{ rotate }] }}>
+              <Wheel participants={participants} size={size} look={look} />
+              {look ? <WheelRim size={size} look={look} /> : <Rim size={size} />}
+            </Animated.View>
+            {look && <WheelHub size={size} look={look} />}
+          </View>
           {showArrows && (
             <View style={[styles.arrows, spinning && { opacity: 0 }]} pointerEvents="none" importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
               <SwipeArrows active={!spinning} />
@@ -314,6 +364,8 @@ export default function RouletteScreen({ participants, back, replace, addHistory
           disabled={braking}
         />
       </View>
+
+      <StyleButton kind="wheel" hidden={spinning} />
     </View>
   );
 }

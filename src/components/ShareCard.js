@@ -5,6 +5,7 @@ import Text from './Text';
 import Logo from './Logo';
 import Trophy from './Trophy';
 import Icon from './Icon';
+import { ModeArtBadge, hasArt } from './ModeArt';
 import { MODE_COLORS, MODE_ICON } from '../modeColors';
 import { shortName } from '../shortName';
 import { t, locale } from '../i18n';
@@ -15,7 +16,7 @@ const MAX_SHOWN = 40; // participantes mostrados no cartão (os demais viram "+N
 
 // Cartão que vira imagem para compartilhar (WhatsApp etc.): logo, campeão, modo do sorteio e todos os participantes.
 // Fica desenhado fora da tela e é fotografado com react-native-view-shot.
-const ShareCard = React.forwardRef(function ShareCard({ winner, type, participants, info, range }, ref) {
+const ShareCard = React.forwardRef(function ShareCard({ winner, type, participants, info, range, ranked }, ref) {
   const mode = MODE_COLORS[type] ? type : 'names';
   const isNum = type === 'number'; // sorteio de número: sem troféu de campeão nem lista de participantes
   const c = MODE_COLORS[mode];
@@ -39,17 +40,17 @@ const ShareCard = React.forwardRef(function ShareCard({ winner, type, participan
       <Logo width={190} />
       {!!i.name && <Text style={styles.drawName} numberOfLines={2}>{i.name}</Text>}
 
-      <View style={styles.trophy}><Trophy width={many ? 84 : 104} /></View>
+      <View style={styles.trophy}><Trophy width={many ? 93 : 111} ranked={!!ranked} /></View>
 
       <View style={styles.ribbon}>
         <Icon name="crown" size={18} color={colors.dark} stroke={2.4} fill />
-        <Text style={styles.ribbonTxt}>{isNum ? t('number.ribbon') : t('result.champion')}</Text>
+        <Text style={styles.ribbonTxt}>{isNum ? t('number.ribbon') : ranked ? t('result.winner') : t('result.champion')}</Text>
       </View>
       <Text style={styles.label}>{isNum ? t('number.shareLabel') : t('result.label')}</Text>
       <Text style={styles.winner} numberOfLines={2} adjustsFontSizeToFit>{winner}</Text>
 
       <LinearGradient colors={[c.accent, c.deep]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.mode}>
-        <Icon name={MODE_ICON[mode]} size={18} color="#FFFFFF" stroke={2.6} />
+        {hasArt(mode) ? <ModeArtBadge mode={mode} size={26} /> : <Icon name={MODE_ICON[mode]} size={18} color="#FFFFFF" stroke={2.6} />}
         <Text style={styles.modeTxt}>{t(`mode.${mode}`)}</Text>
       </LinearGradient>
 

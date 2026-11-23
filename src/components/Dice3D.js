@@ -1,8 +1,10 @@
 import React from 'react';
-import Svg, { G, Path, Ellipse, Text as SvgText } from 'react-native-svg';
+import Svg, { G, Path, Ellipse, Defs, RadialGradient, Stop, Text as SvgText } from 'react-native-svg';
 import { FACES, PIPS, cameraHeight } from '../dice3d';
 
-// Dados 3D com cantos arredondados e dois materiais: 'plastic' (o usado no app) | 'metal' (guardado como alternativa).
+// Dados 3D com cantos arredondados e cinco materiais (o usuário escolhe no botão flutuante; listas em src/looks.js):
+//   'plastic' (o de sempre) | 'neon' (vidro escuro com borda de néon na cor do jogador) | 'cartoon' (plástico com contorno grosso azul-marinho)
+//   | 'gold' (o de sempre com aro dourado) | 'metal' (guardado como alternativa).
 // Cada cubo é projetado em perspectiva (câmera olhando de cima) e só as faces viradas para a câmera são desenhadas.
 // O cubo arredondado é desenhado em duas partes:
 //  1) a silhueta: um cubo menor com contorno grosso de pontas redondas (isso dá as quinas e arestas redondas);
@@ -44,6 +46,13 @@ function tone(c, k, w = 0) {
   return `rgb(${f(c[0])},${f(c[1])},${f(c[2])})`;
 }
 
+// cor do néon de um dado: a cor dele mais viva e clara (o dado preto brilha em azul-gelo)
+function neonOf(hex) {
+  const raw = rgb(hex);
+  if (raw[0] * 0.3 + raw[1] * 0.59 + raw[2] * 0.11 < 70) return '#9DB4FF';
+  return tone(vivid(raw, 1.3), 1.12, 0.28);
+}
+
 export default function Dice3D({ dice, size: S, width: W, height: H, colorOf, material = 'plastic', dimmed = [], glow = [], labels = false }) {
   if (!W || !H) return null;
   const h = S / 2;
@@ -54,16 +63,34 @@ export default function Dice3D({ dice, size: S, width: W, height: H, colorOf, ma
   const cx0 = W / 2, cy0 = H / 2;
   const fmt = (X, Y, Z) => { const f = Hc / (Hc - Z); return `${(cx0 + (X - cx0) * f).toFixed(1)},${(cy0 + (Y - cy0) * f).toFixed(1)}`; };
   const sorted = [...dice].sort((a, b) => a.z - b.z);
+  const lite = dice.length > 10; // muitos dados: sem os enfeites extras do néon e do cartoon, para a rolagem continuar leve
 
   return (
     <Svg width={W} height={H} style={{ position: 'absolute', left: 0, top: 0 }} pointerEvents="none">
+      {material === 'neon' && (
+        <Defs>
+          {sorted.map((d) => (
+            <RadialGradient key={d.id} id={`ng${d.id}`} cx="0.5" cy="0.5" r="0.5">
+              <Stop offset="0" stopColor={neonOf(colorOf(d.id))} stopOpacity={0.55} />
+              <Stop offset="0.55" stopColor={neonOf(colorOf(d.id))} stopOpacity={0.2} />
+              <Stop offset="1" stopColor={neonOf(colorOf(d.id))} stopOpacity={0} />
+            </RadialGradient>
+          ))}
+        </Defs>
+      )}
       {sorted.map((d) => {
         const lift = Math.max(0, d.z - h);
+        const fade = 1 / (1 + lift / 150);
+        const lit = material === 'neon' && !dimmed.includes(d.id);
         return (
-          <Ellipse
-            key={`s${d.id}`} cx={d.x + S * 0.07 + lift * 0.18} cy={d.y + S * 0.11 + lift * 0.28}
-            rx={S * 0.62 + lift * 0.05} ry={S * 0.57 + lift * 0.05} fill="#000814" opacity={(dimmed.includes(d.id) ? 0.18 : 0.42) / (1 + lift / 150)}
-          />
+          <G key={`s${d.id}`}>
+            {/* néon: um brilho da cor do dado no chão (degradê que some nas bordas), por baixo da sombra */}
+            {lit && <Ellipse cx={d.x + S * 0.02} cy={d.y + S * 0.07 + lift * 0.2} rx={S * 1.0} ry={S * 0.92} fill={`url(#ng${d.id})`} opacity={fade} />}
+            <Ellipse
+              cx={d.x + S * 0.07 + lift * 0.18} cy={d.y + S * 0.11 + lift * 0.28}
+              rx={S * 0.62 + lift * 0.05} ry={S * 0.57 + lift * 0.05} fill="#000814" opacity={(dimmed.includes(d.id) ? 0.18 : lit ? 0.3 : 0.42) * fade}
+            />
+          </G>
         );
       })}
       {sorted.map((d) => {
@@ -97,18 +124,47 @@ export default function Dice3D({ dice, size: S, width: W, height: H, colorOf, ma
         }
         const M = material;
         const dark = isBlack; // dado preto: aresta e faces mais claras para destacar do fundo
-        const bevel = M === 'metal' ? tone(base, 1, 0.5) : dark ? tone(base, 1, 0.3) : tone(base, 1, 0.22);
+        const neon = M === 'neon', cartoon = M === 'cartoon', gold = M === 'gold';
+        const edgeC = neonOf(colorOf(d.id));                   // cor da linha de néon
+        const W = 2 * r * scale;                               // espessura da aresta arredondada na tela
+        const t = Math.max(1.3, S * 0.022 * scale);            // fio de néon / de ouro
+        const bevel = neon ? tone(base, 0.4) : cartoon ? tone(base, 1, 0.34) : gold ? '#FFC93C' : M === 'metal' ? tone(base, 1, 0.5) : dark ? tone(base, 1, 0.3) : tone(base, 1, 0.22);
         const parts = [];
         if (glow.includes(d.id)) {
           parts.push(<Ellipse key="g2" cx={d.x} cy={d.y} rx={S * 1.02} ry={S * 1.02} fill="none" stroke="#FFD43B" strokeOpacity={0.3} strokeWidth={9} />);
           parts.push(<Ellipse key="g1" cx={d.x} cy={d.y} rx={S * 1.02} ry={S * 1.02} fill="none" stroke="#FFD43B" strokeWidth={3.5} />);
         }
-        parts.push(<Path key="hull" d={hull} fill={bevel} stroke={bevel} strokeWidth={2 * r * scale} strokeLinejoin="round" />);
+        if (neon) {
+          // brilho em volta (dois traços largos e translúcidos) + linha de néon por fora e corpo escuro dentro
+          if (!lite) parts.push(<Path key="hg2" d={hull} fill="none" stroke={edgeC} strokeOpacity={0.14} strokeWidth={W + S * 0.2 * scale} strokeLinejoin="round" />);
+          parts.push(<Path key="hg1" d={hull} fill="none" stroke={edgeC} strokeOpacity={0.26} strokeWidth={W + S * 0.09 * scale} strokeLinejoin="round" />);
+          parts.push(<Path key="hull" d={hull} fill={bevel} stroke={edgeC} strokeWidth={W} strokeLinejoin="round" />);
+          parts.push(<Path key="hullin" d={hull} fill="none" stroke={bevel} strokeWidth={Math.max(1, W - 2 * t)} strokeLinejoin="round" />);
+        } else if (cartoon) {
+          // contorno grosso azul-marinho por fora (o "adesivo" dos ícones)
+          parts.push(<Path key="hullo" d={hull} fill="#0A1445" stroke="#0A1445" strokeWidth={W + S * 0.1 * scale} strokeLinejoin="round" />);
+          parts.push(<Path key="hull" d={hull} fill={bevel} stroke={bevel} strokeWidth={W} strokeLinejoin="round" />);
+        } else if (gold) {
+          parts.push(<Path key="hullo" d={hull} fill="#A86508" stroke="#A86508" strokeWidth={W + t * 1.1} strokeLinejoin="round" />);
+          parts.push(<Path key="hull" d={hull} fill={bevel} stroke={bevel} strokeWidth={W} strokeLinejoin="round" />);
+        } else {
+          parts.push(<Path key="hull" d={hull} fill={bevel} stroke={bevel} strokeWidth={W} strokeLinejoin="round" />);
+        }
         faces.forEach(({ i, F, pt, lam }) => {
           const k = flat, c = flat * 0.78; // c = onde começa a curva do canto da face
           const fd = `M${pt(-c, -k)}L${pt(c, -k)}Q${pt(k, -k)} ${pt(k, -c)}L${pt(k, c)}Q${pt(k, k)} ${pt(c, k)}L${pt(-c, k)}Q${pt(-k, k)} ${pt(-k, c)}L${pt(-k, -c)}Q${pt(-k, -k)} ${pt(-c, -k)}Z`;
-          const fill = M === 'metal' ? tone(base, 0.34 + 0.5 * lam) : dark ? tone(base, 0.7 + 0.5 * lam, 0.04 + 0.1 * lam) : tone(base, 0.8 + 0.4 * lam, 0.04 + (lam > 0.55 ? 0.14 : 0.04));
-          parts.push(<Path key={`f${i}`} d={fd} fill={fill} />);
+          const fill = neon ? tone(base, 0.22 + 0.4 * lam, 0.02 * lam)
+            : cartoon ? tone(base, 0.88 + 0.3 * lam, 0.05 + (lam > 0.55 ? 0.12 : 0.03))
+            : M === 'metal' ? tone(base, 0.34 + 0.5 * lam) : dark ? tone(base, 0.7 + 0.5 * lam, 0.04 + 0.1 * lam) : tone(base, 0.8 + 0.4 * lam, 0.04 + (lam > 0.55 ? 0.14 : 0.04));
+          if (neon) {
+            parts.push(<Path key={`f${i}`} d={fd} fill={fill} stroke={edgeC} strokeOpacity={0.9} strokeWidth={t * 0.85} strokeLinejoin="round" />);
+            // vidro: um quadrado menor mais claro por dentro (dá a sensação de profundidade do vidro)
+            const g = k * 0.72, gc = g * 0.7;
+            if (!lite) parts.push(<Path key={`fi${i}`} d={`M${pt(-gc, -g)}L${pt(gc, -g)}Q${pt(g, -g)} ${pt(g, -gc)}L${pt(g, gc)}Q${pt(g, g)} ${pt(gc, g)}L${pt(-gc, g)}Q${pt(-g, g)} ${pt(-g, gc)}L${pt(-g, -gc)}Q${pt(-g, -g)} ${pt(-gc, -g)}Z`} fill={edgeC} fillOpacity={0.1 + 0.1 * lam} />);
+          }
+          else if (gold) parts.push(<Path key={`f${i}`} d={fd} fill={fill} stroke="#FFF0B8" strokeOpacity={0.8} strokeWidth={t * 0.7} strokeLinejoin="round" />);
+          else if (cartoon) parts.push(<Path key={`f${i}`} d={fd} fill={fill} stroke={tone(base, 1.2, 0.55)} strokeOpacity={0.7} strokeWidth={t * 0.9} strokeLinejoin="round" />);
+          else parts.push(<Path key={`f${i}`} d={fd} fill={fill} />);
           if (M === 'metal') {
             let bd = '';
             BANDS.forEach((poly) => { poly.forEach(([a, b], j) => { bd += `${j ? 'L' : 'M'}${pt(a * k, b * k)}`; }); bd += 'Z'; });
@@ -117,17 +173,23 @@ export default function Dice3D({ dice, size: S, width: W, height: H, colorOf, ma
             DARK_BAND.forEach(([a, b], j) => { dd += `${j ? 'L' : 'M'}${pt(a * k * 0.93, b * k * 0.93)}`; });
             parts.push(<Path key={`k${i}`} d={`${dd}Z`} fill="#000A2A" fillOpacity={0.22} />);
           }
-          let pd = '';
-          PIPS[F.value].forEach(([a, b]) => {
-            CIRC.forEach(([cs, sn], j) => { pd += `${j ? 'L' : 'M'}${pt(a * PIP_POS + PIP_R * cs, b * PIP_POS + PIP_R * sn)}`; });
-            pd += 'Z';
-          });
+          const pipPath = (ox = 0, oy = 0, rr = PIP_R) => {
+            let out = '';
+            PIPS[F.value].forEach(([a, b]) => {
+              CIRC.forEach(([cs, sn], j) => { out += `${j ? 'L' : 'M'}${pt(a * PIP_POS + ox + rr * cs, b * PIP_POS + oy + rr * sn)}`; });
+              out += 'Z';
+            });
+            return out;
+          };
+          const pd = pipPath();
+          if (neon && !lite) parts.push(<Path key={`ph${i}`} d={pd} fill="none" stroke="#FFFFFF" strokeOpacity={0.28 * (0.5 + lam)} strokeWidth={S * 0.07} strokeLinejoin="round" />);
+          if (cartoon && !lite) parts.push(<Path key={`ps${i}`} d={pipPath(0.03, 0.05, PIP_R * 1.04)} fill={tone(base, 0.4)} fillOpacity={0.55} />);
           parts.push(M === 'metal'
             ? <Path key={`p${i}`} d={pd} fill="#01040F" stroke="#FFFFFF" strokeOpacity={0.35 * lam + 0.1} strokeWidth={Math.max(1, S * 0.02)} />
-            : <Path key={`p${i}`} d={pd} fill="#FFFFFF" fillOpacity={0.6 + 0.4 * lam} />);
+            : <Path key={`p${i}`} d={pd} fill="#FFFFFF" fillOpacity={cartoon ? 1 : neon ? 0.85 + 0.15 * lam : 0.6 + 0.4 * lam} />);
         });
         // brilho do plástico: uma mancha clara na face mais iluminada, puxada para o lado da luz
-        if (M === 'plastic' && best && best.lam > 0.45) {
+        if (M !== 'metal' && best && best.lam > 0.45) {
           const { u, v, pt } = best;
           const la = (LIGHT[0] * u[0] + LIGHT[1] * u[1] + LIGHT[2] * u[2]) * 0.62, lb = (LIGHT[0] * v[0] + LIGHT[1] * v[1] + LIGHT[2] * v[2]) * 0.62;
           const ln = Math.hypot(la, lb) || 1;
@@ -137,7 +199,7 @@ export default function Dice3D({ dice, size: S, width: W, height: H, colorOf, ma
             const a = la * flat + (ta * cs * 0.36 + (la / ln) * sn * 0.1) * flat, b = lb * flat + (tb * cs * 0.36 + (lb / ln) * sn * 0.1) * flat;
             gd += `${j ? 'L' : 'M'}${pt(a, b)}`;
           });
-          parts.push(<Path key="gloss" d={`${gd}Z`} fill="#FFFFFF" fillOpacity={0.6} />);
+          parts.push(<Path key="gloss" d={`${gd}Z`} fill="#FFFFFF" fillOpacity={neon ? 0.3 : cartoon ? 0.78 : 0.6} />);
         }
         return <G key={d.id} opacity={dimmed.includes(d.id) ? 0.38 : 1}>{parts}</G>;
       })}

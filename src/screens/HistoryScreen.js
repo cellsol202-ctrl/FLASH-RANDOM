@@ -10,7 +10,9 @@ import { t, locale } from '../i18n';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MODE_COLORS } from '../modeColors';
 import GlassBall from '../components/GlassBall';
+import ModeArt, { hasArt } from '../components/ModeArt';
 import { sk, G, isGlass } from '../skin';
+import { AmbientBolts } from '../components/HomeBolts';
 
 import { tint, liveStyles } from '../themes';
 // 'sticks' (Palitinho) saiu do app, mas sorteios antigos dele continuam aparecendo no histórico
@@ -33,6 +35,7 @@ function when(iso) {
 export default function HistoryScreen({ back, history }) {
   return (
     <View style={{ flex: 1 }}>
+      <AmbientBolts />
       <Header onBack={back} />
       <ScreenTitle text={t('history.title')} fontSize={38} />
       <Text style={styles.sub}>{t('history.sub', { n: history.length })}</Text>
@@ -55,7 +58,9 @@ export default function HistoryScreen({ back, history }) {
           return (
             <AnimatedIn from={14} delay={Math.min(index, 8) * 50}>
               <View style={[sk(styles.row, G.item), { borderColor: MODE_COLORS[type].accent }]}>
-                {isGlass() ? (
+                {hasArt(type) ? (
+                  <View style={styles.artBox}><ModeArt mode={type} size={48} /></View>
+                ) : isGlass() ? (
                   <GlassBall size={48} accent={MODE_COLORS[type].accent} deep={MODE_COLORS[type].deep}>
                     <Icon name={TYPE_ICON[type]} size={30} color={tint('#FFFFFF')} stroke={2.2} />
                   </GlassBall>
@@ -92,6 +97,7 @@ const styles = liveStyles(() => ({
     flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: neon.panel, borderRadius: 18,
     borderWidth: 2, borderColor: neon.border, padding: 10, marginBottom: 10,
   },
+  artBox: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   iconBox: {
     width: 48, height: 48, borderRadius: 24, borderWidth: 2, borderColor: tint('#FFFFFF'),
     alignItems: 'center', justifyContent: 'center',

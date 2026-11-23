@@ -7,6 +7,8 @@ import Logo from '../../components/Logo';
 import Icon from '../../components/Icon';
 import Bolt from '../../components/Bolt';
 import GlassBall from '../../components/GlassBall';
+import ModeArt from '../../components/ModeArt';
+import { AmbientBolts, LinkBolts } from '../../components/HomeBolts';
 import { playTap } from '../../sounds';
 import { t } from '../../i18n';
 import { FILL } from '../../theme';
@@ -44,6 +46,13 @@ function NavItem({ icon, label, on, onPress }) {
   );
 }
 
+// Como a ilustração do modo aparece na órbita: 'free' = solta, com um brilho da cor do modo atrás; 'ball' = dentro da esfera de vidro
+const ART_STYLE = 'free';
+
+// Intensidade do brilho colorido atrás dos ícones (tamanho em múltiplos do círculo; opacidade 0–1):
+//  halo = mancha larga e suave · core = núcleo perto do ícone · center = mancha em volta do raio do centro
+const GLOW = { halo: { size: 1.6, opacity: 0.3 }, core: { size: 1.15, opacity: 0.55 }, center: 0.3 };
+
 // Tamanhos que se ajustam à tela (largura e altura livres): círculos grandes em telas grandes, menores em telas pequenas
 const sizes = (w, h) => {
   // com 7 modos na órbita, as esferas são um pouco menores para não se encostarem
@@ -70,7 +79,7 @@ function Orbit({ navigate, w, h }) {
   const back = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-360deg'] });
   return (
     <>
-      <Blob id="gb4" size={R * 1.0} color={tint('#8FE0FF')} opacity={0.5} style={{ left: w / 2 - R * 0.5, top: top + R - R * 0.5 }} />
+      <Blob id="gb4" size={R * 1.0} color={tint('#8FE0FF')} opacity={GLOW.center} style={{ left: w / 2 - R * 0.5, top: top + R - R * 0.5 }} />
       <Svg width={S + 4} height={S + 4} style={{ position: 'absolute', left: left - 2, top: top - 2 }} pointerEvents="none">
         <Circle cx={R + 2} cy={R + 2} r={R} fill="none" stroke={tint('rgba(255,255,255,0.32)')} strokeWidth={1.5} strokeDasharray="3 8" />
       </Svg>
@@ -78,6 +87,32 @@ function Orbit({ navigate, w, h }) {
         <Bolt size={bolt} glow />
       </Animated.View>
       <Animated.View style={{ position: 'absolute', left, top, width: S, height: S, transform: [{ rotate: rot }] }}>
+        {/* brilho colorido atrás dos ícones (halo largo + núcleo forte). Fica numa camada só, antes de todos os ícones e
+            textos, para o brilho de um vizinho nunca passar por cima do nome do outro. Círculos não precisam de contra-giro. */}
+        {ART_STYLE !== 'ball' && OPTIONS.map((o, i) => {
+          const a = (-90 + (i * 360) / OPTIONS.length) * (Math.PI / 180);
+          const cx = R + R * Math.cos(a);
+          const cy = R + R * Math.sin(a);
+          return (
+            <React.Fragment key={`glow-${o.mode}`}>
+              {GLOW.halo.opacity > 0 && (
+                <Blob id={`ob${i}`} size={DISC * GLOW.halo.size} color={o.accent} opacity={GLOW.halo.opacity} style={{ left: cx - (DISC * GLOW.halo.size) / 2, top: cy - (DISC * GLOW.halo.size) / 2 }} />
+              )}
+              <Blob id={`oc${i}`} size={DISC * GLOW.core.size} color={o.accent} opacity={GLOW.core.opacity} style={{ left: cx - (DISC * GLOW.core.size) / 2, top: cy - (DISC * GLOW.core.size) / 2 }} />
+            </React.Fragment>
+          );
+        })}
+        {/* raios do centro até os ícones (na cor de cada um): ficam no contêiner que gira, então acompanham os ícones */}
+        <LinkBolts
+          size={S}
+          center={[R, R]}
+          from={bolt * 0.45}
+          to={DISC * 0.6}
+          targets={OPTIONS.map((o, i) => {
+            const a = (-90 + (i * 360) / OPTIONS.length) * (Math.PI / 180);
+            return { x: R + R * Math.cos(a), y: R + R * Math.sin(a), color: o.accent };
+          })}
+        />
         {OPTIONS.map((o, i) => {
           const a = (-90 + (i * 360) / OPTIONS.length) * (Math.PI / 180);
           const cx = R + R * Math.cos(a);
@@ -91,9 +126,15 @@ function Orbit({ navigate, w, h }) {
                 accessibilityLabel={modeLabel(o)}
                 style={({ pressed }) => [{ alignItems: 'center', width: IW }, pressed && { opacity: 0.85, transform: [{ scale: 0.94 }] }]}
               >
-                <GlassBall size={DISC} accent={o.accent} deep={o.deep}>
-                  <Icon name={o.icon} size={Math.round(DISC * 0.6)} color={tint('#FFFFFF')} stroke={2.1} />
-                </GlassBall>
+                {ART_STYLE === 'ball' ? (
+                  <GlassBall size={DISC} accent={o.accent} deep={o.deep}>
+                    <ModeArt mode={o.mode} size={Math.round(DISC * 0.74)} />
+                  </GlassBall>
+                ) : (
+                  <View style={{ width: DISC, height: DISC, alignItems: 'center', justifyContent: 'center' }}>
+                    <ModeArt mode={o.mode} size={Math.round(DISC * 1.12)} />
+                  </View>
+                )}
                 {o.isNew && <View style={[styles.newBadge, { right: (IW - DISC) / 2 - 8 }]}><Text style={styles.newTxt}>{t('home.new')}</Text></View>}
                 <Text style={[styles.name, { fontSize: font }]} numberOfLines={2} adjustsFontSizeToFit>{t(o.mode === 'race' ? 'mode.raceShort' : `mode.${o.mode}`)}</Text>
               </Pressable>
@@ -114,6 +155,7 @@ export default function HomeGlass({ navigate }) {
       <Blob id="gb1" size={340} color={tint('#22D3FF')} opacity={0.6} style={{ left: -120, top: 60 }} />
       <Blob id="gb2" size={320} color={tint('#B266FF')} opacity={0.65} style={{ right: -120, top: 300 }} />
       <Blob id="gb3" size={300} color={tint('#FF4D94')} opacity={0.5} style={{ left: -40, bottom: 20 }} />
+      <AmbientBolts />
 
       <View style={styles.container}>
         <Logo width={Math.min(width - 160, 200)} />

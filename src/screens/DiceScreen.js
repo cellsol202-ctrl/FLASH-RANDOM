@@ -7,8 +7,9 @@ import Button from '../components/Button';
 import { colors, DICE_COLORS, neon } from '../theme';
 import { dieSizeFor, restDice, simulateRoll, readRoll, FPS } from '../dice3d';
 import Dice3D from '../components/Dice3D';
+import StyleButton from '../components/StyleButton';
 import { resolveColors, pickColor } from '../playerColors';
-import { duration, getSettings } from '../settings';
+import { duration, getSettings, useSettings } from '../settings';
 import { t } from '../i18n';
 import Icon from '../components/Icon';
 import { play, useSounds, playTap } from '../sounds';
@@ -20,7 +21,6 @@ import { sk, G } from '../skin';
 import { tint, liveStyles } from '../themes';
 import { planHeats, racersOf, isHeat, resultParams } from '../heats';
 const BORDER = 4;   // borda do tabuleiro (2 de cada lado)
-const MATERIAL = 'plastic'; // visual dos dados: 'plastic' ou 'metal' (o metálico fica pronto para usar depois)
 const SPEED = 0.85; // velocidade da reprodução (um pouco de câmera lenta dá mais peso e suspense)
 
 // Faixa que "pula" na tela (empate / vencedor)
@@ -41,6 +41,7 @@ function Banner({ icon, text, bottom }) {
 
 export default function DiceScreen({ params, participants: all, setParticipants, back, replace, addHistory }) {
   useSounds(['dice', 'result']);
+  const { diceLook } = useSettings(); // estilo dos dados (botão flutuante de paleta)
   // mais de 12 participantes: rola em baterias de 12 e os vencedores fazem a final
   const plan = useMemo(() => (params && params.plan) || planHeats(all), []); // eslint-disable-line react-hooks/exhaustive-deps
   const participants = useMemo(() => racersOf(plan, all), [plan, all]);
@@ -250,7 +251,7 @@ export default function DiceScreen({ params, participants: all, setParticipants,
         }}
       >
         <View style={styles.decor} pointerEvents="none" />
-        <Dice3D dice={bodies.current} size={s} width={board.w} height={board.h} material={MATERIAL} colorOf={(id) => DICE_COLORS[colorIdx[id]]} glow={glow} dimmed={dimmed} labels={getSettings().marks} />
+        <Dice3D dice={bodies.current} size={s} width={board.w} height={board.h} material={diceLook} colorOf={(id) => DICE_COLORS[colorIdx[id]]} glow={glow} dimmed={dimmed} labels={getSettings().marks} />
         {phase === 'idle' && !pick && <Text style={styles.hint}>{t('dice.hint')}</Text>}
         {banner && <Banner key={banner.text} icon={banner.icon} text={banner.text} bottom={banner.bottom} />}
         {/* paleta de cores: aparece enquanto o participante segura o nome */}
@@ -288,6 +289,8 @@ export default function DiceScreen({ params, participants: all, setParticipants,
       <View style={styles.footer}>
         <Button title={t('dice.roll')} icon={<Icon name="dice" size={22} color={tint('#FFFFFF')} stroke={2.4} />} onPress={roll} disabled={phase !== 'idle'} />
       </View>
+
+      <StyleButton kind="dice" hidden={phase !== 'idle' || !!pick} />
     </View>
   );
 }

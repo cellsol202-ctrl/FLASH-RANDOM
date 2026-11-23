@@ -4,8 +4,10 @@ import Text from '../../components/Text';
 import { LinearGradient } from 'expo-linear-gradient';
 import Logo from '../../components/Logo';
 import Icon from '../../components/Icon';
+import ModeArt from '../../components/ModeArt';
 import AnimatedIn from '../../components/AnimatedIn';
 import Glow from '../../components/Glow';
+import { AmbientBolts } from '../../components/HomeBolts';
 import NeonTitle from '../../components/NeonTitle';
 import NeonButton from '../../components/NeonButton';
 import { playTap } from '../../sounds';
@@ -19,6 +21,8 @@ export default function HomeNormal({ navigate }) {
   const { width } = useWindowDimensions();
   const { ty, sc } = useFloat();
   return (
+    <View style={{ flex: 1 }}>
+    <AmbientBolts />
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       <Pressable
         onPress={() => { playTap(); navigate('Settings'); }}
@@ -47,9 +51,9 @@ export default function HomeNormal({ navigate }) {
                 accessibilityLabel={modeLabel(o)}
                 style={({ pressed }) => [styles.card, { borderColor: o.accent }, pressed && { opacity: 0.85, transform: [{ scale: 0.985 }] }]}
               >
-                <LinearGradient colors={[o.accent, o.deep]} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={[styles.iconBox, { borderColor: tint('#FFFFFF') }]}>
-                  <Icon name={o.icon} size={36} color={tint('#FFFFFF')} stroke={2.2} />
-                </LinearGradient>
+                <View style={styles.iconBox}>
+                  <ModeArt mode={o.mode} size={60} />
+                </View>
                 <View style={{ flex: 1 }}>
                   <View style={styles.titleRow}>
                     <Text style={[styles.cardTitle, { flexShrink: 1 }]} numberOfLines={1} adjustsFontSizeToFit>{t(`mode.${o.mode}`)}</Text>
@@ -77,6 +81,7 @@ export default function HomeNormal({ navigate }) {
         </AnimatedIn>
       </View>
     </ScrollView>
+    </View>
   );
 }
 
@@ -93,7 +98,7 @@ const styles = liveStyles(() => ({
     flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: neon.panel,
     borderColor: neon.border, borderWidth: 2, borderRadius: 18, paddingHorizontal: 12, paddingVertical: 6,
   },
-  iconBox: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
+  iconBox: { width: 60, height: 60, alignItems: 'center', justifyContent: 'center' },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   newBadge: { backgroundColor: colors.yellow, borderRadius: 9, paddingHorizontal: 7, paddingVertical: 1 },
   newTxt: { color: colors.dark, fontSize: 11, fontWeight: '900' },

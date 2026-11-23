@@ -13,14 +13,14 @@ Aplicativo de sorteios feito em **React Native (Expo)** com foco em **imersão e
 | Modo | Como funciona |
 |---|---|
 | ⚡ **Tambor** | Os nomes giram na vertical, como um caça-níquel, entre dois raios; começa em GIRAR e para na hora quando você toca em PARAR (o nome do centro vence) |
-| 🎡 **Roleta** | Roleta imersiva: toque ou deslize o dedo em qualquer lugar da área (esquerda = horário, direita = anti-horário), com setas de néon de apoio e botão PARAR que para na hora; listas prontas e som de ticks |
-| 🎲 **Dados** | Dados 3D em quantidade escolhida (1, 2, 3 ou mais), com materiais e cores à escolha; o maior número vence. Com mais de 12 participantes, o sorteio é feito em baterias, até 48 |
+| 🎡 **Roleta** | Roleta imersiva: toque ou deslize o dedo em qualquer lugar da área (esquerda = horário, direita = anti-horário), com setas de néon de apoio e botão PARAR que para na hora; listas prontas e som de ticks; 5 estilos de roda à escolha (botão de paleta) |
+| 🎲 **Dados** | Dados 3D em quantidade escolhida (1, 2, 3 ou mais), com cores à escolha e 4 estilos de dado (botão de paleta); o maior número vence. Com mais de 12 participantes, o sorteio é feito em baterias, até 48 |
 | 🏁 **Corrida de bolinhas** | Cada participante é uma bolinha; a primeira a chegar vence. Com mais de 12 participantes, a corrida é feita em baterias (até 48) e os vencedores disputam a final |
 | 🪙 **Cara ou coroa** | A moeda gira com física própria e decide entre dois lados |
 | #️⃣ **Número** | Escolha o intervalo (por exemplo, de 1 a 100) e quantos números sortear; os dígitos giram como numa slot machine. Serve para rifas e bingos, com atalhos prontos, opção de não repetir, lista dos últimos sorteados e compartilhamento do resultado |
 | 👆 **Quem começa?** | Todos encostam um dedo na tela e, depois de uma contagem de 3 s, um raio com vibração escolhe um dos dedos. O limite de dedos é o número de pessoas escolhido (de 2 a 10), e há uma opção sem toque para quem não consegue usar vários dedos |
 
-Todos os modos terminam numa tela de resultado com troféu, cadeia de raios e som de vitória. O resultado pode ser **compartilhado como imagem** (por exemplo, no WhatsApp).
+Todos os modos terminam numa tela de resultado com troféu, cadeia de raios e som de vitória (nas disputas de Dados e Corrida o troféu leva o selo "1º LUGAR", escrito no idioma escolhido). O resultado pode ser **compartilhado como imagem** (por exemplo, no WhatsApp).
 
 ## Recursos
 
@@ -31,6 +31,7 @@ Todos os modos terminam numa tela de resultado com troféu, cadeia de raios e so
 - **4 idiomas** (com bandeiras): Português, English, Español e Deutsch
 - **Histórico** dos sorteios feitos
 - **Duração configurável** de cada sorteio com botões − e + (Roleta e Corrida de 5 a 60 s, Moeda de 3 a 5 s); os modos de tempo fixo ou automático aparecem com cadeado e explicação
+- **Estilo da roleta e dos dados**: botão flutuante de paleta que o usuário **arrasta para onde quiser** (a posição fica salva). Para o menu abrir, é preciso **segurar o botão por 1 segundo** (um anel mostra o progresso), o que evita abrir sem querer; um toque rápido só mostra uma dica. Quem usa leitor de tela abre com toque duplo e move o botão pelas ações do leitor
 - **Listas prontas** (jantar, lugares, meses, animais, cores...); no modelo *Cores*, cada bolinha tem a cor do nome escrito
 - **Catálogo de 24 cores** para os participantes não repetirem cor em listas grandes
 - **Compartilhar** o resultado como imagem, com dados opcionais do sorteio (nome, local, quem realizou e observações)
@@ -85,11 +86,12 @@ O perfil `preview` do `eas.json` precisa estar configurado com `"buildType": "ap
 flash-random/
 ├── App.js                 # pilha de telas, configurações e fundo
 ├── index.js               # ponto de entrada do Expo
-├── assets/                # ícones, fontes e sons
+├── assets/                # ícone do app, logo, ícones dos modos, troféus, fontes e sons
 └── src/
     ├── screens/           # telas: início, sorteios, resultado, histórico, ajustes
     │   └── home/          # início nos perfis Normal e Vidro
     ├── components/        # botões, cabeçalho, fundo, raios, troféu etc.
+    ├── looks.js           # estilos de roleta e dados disponíveis no menu e o estilo padrão
     ├── i18n.js            # textos em 4 idiomas
     ├── settings.js        # configurações e perfis
     ├── themes.js          # 7 cores de tema (o azul do app vira outra cor)
@@ -103,7 +105,7 @@ flash-random/
 ## Autores
 
 - **Celso Morais Siqueira Filho**: [LinkedIn](https://www.linkedin.com/in/cellsomsf/)
-- Parceiro de projeto: _adicione aqui o nome e o link_
+- **Alex Albuquerque Marcos Vilela**: [GitHub](https://github.com/AlexBr93)
 
 Desenvolvido com apoio de IA (Claude, da Anthropic), com a permissão do professor.
 

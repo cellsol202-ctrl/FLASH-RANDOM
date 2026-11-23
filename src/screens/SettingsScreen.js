@@ -11,18 +11,18 @@ import Flag, { LANG_FLAG } from '../components/Flag';
 import Segmented from '../components/Segmented';
 import { LinearGradient } from 'expo-linear-gradient';
 import GlassBall from '../components/GlassBall';
+import ModeArt from '../components/ModeArt';
 import { MODE_COLORS } from '../modeColors';
 import { neon, FILL } from '../theme';
 import { playTap, stopAll, useSounds } from '../sounds';
 import { useSettings, setSetting, getSettings, LANGS, PROFILES, duration, durMin, durMax, FIXED, FIRST_COUNT } from '../settings';
 import { t, LANG_NAMES } from '../i18n';
 import { isGlass } from '../skin';
+import { AmbientBolts } from '../components/HomeBolts';
 
 import { tint, liveStyles, themeKey, THEMES, SWATCH } from '../themes';
-// ícone do modo: esfera de vidro colorida no perfil Vidro, ícone simples no Normal
-const modeIcon = (m) => isGlass()
-  ? <GlassBall size={32} accent={MODE_COLORS[m.mode].accent} deep={MODE_COLORS[m.mode].deep}><Icon name={m.icon} size={21} color={tint('#FFFFFF')} stroke={2.2} /></GlassBall>
-  : <View style={{ width: 32, alignItems: 'center' }}><Icon name={m.icon} size={20} color={TONE.durations.accent} stroke={2.2} /></View>;
+// ícone do modo: a ilustração colorida do modo, igual nos dois perfis
+const modeIcon = (m) => <View style={{ width: 32, alignItems: 'center' }}><ModeArt mode={m.mode} size={32} /></View>;
 
 // os 7 modos, na mesma ordem da tela inicial (perfil padrão)
 // kind: 'adj' = ajustável com − e +; 'none' = sem tempo (Tambor); 'fixed' = tempo fixo; 'auto' = tempo automático
@@ -122,6 +122,7 @@ export default function SettingsScreen({ back }) {
 
   return (
     <View style={{ flex: 1 }}>
+      <AmbientBolts />
       <Header onBack={back} />
       <ScreenTitle text={t('settings.title')} fontSize={36} />
 

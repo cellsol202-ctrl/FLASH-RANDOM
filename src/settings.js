@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { KEYS, load, save } from './storage';
+import { DEFAULT_LOOKS, LOOK_OPTIONS } from './looks';
 
 // Configurações do app (salvas no aparelho):
 //   volume  = volume geral, de 0 (sem som) a 1
@@ -7,6 +8,8 @@ import { KEYS, load, save } from './storage';
 //   lang    = idioma: 'pt' | 'en' | 'es' | 'de'
 //   profile = visual da tela inicial: 'normal' | 'glass'
 //   theme   = cor do app: 'blue' | 'black' | 'purple' | 'pink' | 'orange' | 'teal' | 'wine' (veja themes.js)
+//   wheelLook = estilo da roleta e diceLook = estilo dos dados (listas em looks.js), escolhidos no botão flutuante de paleta
+//   lookBtn   = onde o usuário deixou esse botão: { fx, fy } de 0 a 1 (fração do espaço livre da tela) ou null = canto do topo
 //   dur     = duração de cada modo de sorteio, em segundos (de 5 a 60). O Tambor não tem tempo: só para quando o usuário toca em PARAR
 // Acessibilidade (todas desligadas por padrão, menos a vibração):
 //   voice    = narração por voz dos resultados e avisos
@@ -32,6 +35,7 @@ export const DUR_DEFAULTS = { names: 6, roulette: 6, dice: 5, race: 9, coin: 5 }
 const DEFAULTS = {
   volume: 1, effects: true, lang: 'pt', profile: 'normal', theme: 'blue', dur: DUR_DEFAULTS,
   voice: false, bigText: false, contrast: false, calm: false, marks: false, haptics: true, slow: false, bigTouch: false,
+  wheelLook: DEFAULT_LOOKS.wheel, diceLook: DEFAULT_LOOKS.dice, lookBtn: null,
 };
 export const LANGS = ['pt', 'en', 'es', 'de'];
 export const PROFILES = ['normal', 'glass'];
@@ -66,6 +70,11 @@ export async function loadSettings() {
     if (!PROFILES.includes(state.profile)) state.profile = DEFAULTS.profile;
     if (!THEME_KEYS.includes(state.theme)) state.theme = DEFAULTS.theme;
     state.volume = Math.max(0, Math.min(1, Number(state.volume) || 0));
+    if (!LOOK_OPTIONS.wheel.includes(state.wheelLook)) state.wheelLook = DEFAULTS.wheelLook;
+    if (!LOOK_OPTIONS.dice.includes(state.diceLook)) state.diceLook = DEFAULTS.diceLook;
+    const lb = state.lookBtn;
+    const ok = lb && Number.isFinite(lb.fx) && Number.isFinite(lb.fy);
+    state.lookBtn = ok ? { fx: Math.max(0, Math.min(1, lb.fx)), fy: Math.max(0, Math.min(1, lb.fy)) } : null;
   } else {
     // versões antigas só guardavam "som ligado/desligado"
     const soundOn = await load(KEYS.sound, true);

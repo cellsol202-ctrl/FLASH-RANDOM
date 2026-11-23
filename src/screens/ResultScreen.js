@@ -10,11 +10,12 @@ import ScreenTitle from '../components/ScreenTitle';
 import Glow from '../components/Glow';
 import Icon from '../components/Icon';
 import GlassBall from '../components/GlassBall';
+import { ModeArtBadge, hasArt } from '../components/ModeArt';
 import { MODE_COLORS } from '../modeColors';
 import { play, useSounds } from '../sounds';
 import { stash } from '../removed';
 import Button from '../components/Button';
-import Trophy from '../components/Trophy';
+import Trophy, { isRanked } from '../components/Trophy';
 import Sparks from '../components/Sparks';
 import LightningField from '../components/LightningField';
 import { makeBolt } from '../lightning';
@@ -104,6 +105,7 @@ export default function ResultScreen({ params, replace, reset, participants, set
   const again = () => replace(AGAIN[params.type] || 'DrawNames');
   // Tirar o sorteado da lista e sortear de novo, até sobrar só um. Cara ou coroa tem só 2, então fica de fora.
   const heat = params.heat; // fim de uma bateria (não é a final)
+  const ranked = isRanked(params.type, heat); // disputa de verdade (final de Dados ou Corrida): troféu "1º LUGAR" e faixa CAMPEÃO
   const canRemove = !heat && params.type !== 'coin' && participants.length >= 2;
   const lastTwo = participants.length === 2;
   const removeWinner = () => {
@@ -137,7 +139,7 @@ export default function ResultScreen({ params, replace, reset, participants, set
         <View style={styles.stage}>
           <Sparks width={STAGE_W} height={STAGE_H} />
           <Animated.View style={[styles.trophy, { opacity: pop, transform: [{ scale: pop }, { translateY: floatY }] }]}>
-            <Trophy width={138} />
+            <Trophy width={156} ranked={ranked} />
           </Animated.View>
         </View>
 
@@ -149,7 +151,7 @@ export default function ResultScreen({ params, replace, reset, participants, set
               <View style={styles.ribbon}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Icon name={heat ? 'flag' : 'crown'} size={20} color={colors.dark} stroke={2.6} fill={!heat} />
-                  <Text style={styles.ribbonTxt}>{heat ? t('heat.ribbon', { n: heat.n }) : t('result.champion')}</Text>
+                  <Text style={styles.ribbonTxt}>{heat ? t('heat.ribbon', { n: heat.n }) : ranked ? t('result.winner') : t('result.champion')}</Text>
                 </View>
               </View>
             </View>
@@ -157,7 +159,9 @@ export default function ResultScreen({ params, replace, reset, participants, set
             <Text style={styles.winner} numberOfLines={2} adjustsFontSizeToFit>{params.winner}</Text>
             <View style={[styles.tag, { backgroundColor: accent }, darkAccent && { borderWidth: 1.5, borderColor: neon.ice }]}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                {isGlass() && MODE_COLORS[params.type]
+                {hasArt(params.type)
+                  ? <ModeArtBadge mode={params.type} size={28} />
+                  : isGlass() && MODE_COLORS[params.type]
                   ? <GlassBall size={26} accent={MODE_COLORS[params.type].accent} deep={MODE_COLORS[params.type].deep}><Icon name={TYPE_ICON[params.type]} size={17} color={tint('#FFFFFF')} stroke={2.4} /></GlassBall>
                   : <Icon name={TYPE_ICON[params.type] || 'bolt'} size={16} color={tagInk} stroke={2.6} />}
                 <Text style={[styles.tagTxt, { color: tagInk }]}>{t(`mode.${TYPE_ICON[params.type] ? params.type : 'names'}`)}</Text>
@@ -196,7 +200,7 @@ export default function ResultScreen({ params, replace, reset, participants, set
       <Animated.View pointerEvents="none" style={[FILL, { backgroundColor: tint('#DDF3FF'), opacity: flash }]} />
       {/* cartão que vira imagem: fica fora da tela, só para ser fotografado */}
       <View pointerEvents="none" style={{ position: 'absolute', left: -2000, top: 0 }}>
-        <ShareCard ref={cardRef} winner={params.winner} type={params.type} participants={participants} info={info} />
+        <ShareCard ref={cardRef} winner={params.winner} type={params.type} participants={participants} info={info} ranked={ranked} />
       </View>
       {askInfo && <ShareInfoSheet onCancel={() => setAskInfo(false)} onShare={share} />}
     </View>
@@ -209,7 +213,7 @@ const styles = liveStyles(() => ({
   content: { flex: 1, alignItems: 'center' },
   title: { fontSize: 26, marginTop: 4 },
   stage: { width: STAGE_W, height: STAGE_H, marginTop: 10 },
-  trophy: { position: 'absolute', top: 12, left: 0, right: 0, alignItems: 'center' },
+  trophy: { position: 'absolute', top: 0, left: 0, right: 0, alignItems: 'center' },
   cardWrap: { width: '100%', paddingHorizontal: 18, marginTop: 14 },
   card: {
     backgroundColor: tint('rgba(3,12,70,0.92)'), borderRadius: 26, borderWidth: 2, borderColor: neon.ice,
