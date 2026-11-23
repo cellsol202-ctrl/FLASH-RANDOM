@@ -5,11 +5,12 @@ import { Path, G } from 'react-native-svg';
 // halo azul largo → azul claro → núcleo branco, com os galhos mais finos. u = escala das espessuras.
 const round = { fill: 'none', strokeLinecap: 'round', strokeLinejoin: 'round' };
 
+// b.c = { halo, mid } troca as cores do brilho (ex.: raio na cor do ícone); b.o = intensidade geral (raios fracos de fundo).
 export default function BoltLayers({ bolts, u = 1 }) {
   return bolts.map((b) => (
-    <G key={b.id} opacity={b.flicker[b.age]}>
-      <Path d={b.trunk} {...round} stroke="#2E6BFF" strokeOpacity={0.22} strokeWidth={15 * u} />
-      <Path d={b.trunk + b.thin} {...round} stroke="#4FA8FF" strokeOpacity={0.4} strokeWidth={7 * u} />
+    <G key={b.id} opacity={b.flicker[b.age] * (b.o == null ? 1 : b.o)}>
+      <Path d={b.trunk} {...round} stroke={b.c ? b.c.halo : '#2E6BFF'} strokeOpacity={0.22} strokeWidth={15 * u} />
+      <Path d={b.trunk + b.thin} {...round} stroke={b.c ? b.c.mid : '#4FA8FF'} strokeOpacity={0.4} strokeWidth={7 * u} />
       <Path d={b.trunk} {...round} stroke="#D6F3FF" strokeWidth={3.2 * u} />
       <Path d={b.trunk} {...round} stroke="#FFFFFF" strokeWidth={1.5 * u} />
       {b.thin ? <Path d={b.thin} {...round} stroke="#E6F8FF" strokeWidth={1.7 * u} /> : null}

@@ -9,10 +9,14 @@ import ScreenTitle from '../components/ScreenTitle';
 import { t, locale } from '../i18n';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MODE_COLORS } from '../modeColors';
-import { sk, G } from '../skin';
+import GlassBall from '../components/GlassBall';
+import ModeArt, { hasArt } from '../components/ModeArt';
+import { sk, G, isGlass } from '../skin';
+import { AmbientBolts } from '../components/HomeBolts';
 
+import { tint, liveStyles } from '../themes';
 // 'sticks' (Palitinho) saiu do app, mas sorteios antigos dele continuam aparecendo no histórico
-const TYPE_ICON = { names: 'bolt', roulette: 'wheel', dice: 'dice', race: 'flag', bomb: 'bomb', coin: 'coin', sticks: 'sticks' };
+const TYPE_ICON = { names: 'drum', roulette: 'roulette', dice: 'dice', race: 'race', coin: 'coin', number: 'hash', first: 'finger', sticks: 'sticks' };
 
 // histórico antigo (sem tipo) começava com um emoji: descobre o tipo por ele e remove do texto
 function parseHistory(h) {
@@ -31,6 +35,7 @@ function when(iso) {
 export default function HistoryScreen({ back, history }) {
   return (
     <View style={{ flex: 1 }}>
+      <AmbientBolts />
       <Header onBack={back} />
       <ScreenTitle text={t('history.title')} fontSize={38} />
       <Text style={styles.sub}>{t('history.sub', { n: history.length })}</Text>
@@ -53,9 +58,17 @@ export default function HistoryScreen({ back, history }) {
           return (
             <AnimatedIn from={14} delay={Math.min(index, 8) * 50}>
               <View style={[sk(styles.row, G.item), { borderColor: MODE_COLORS[type].accent }]}>
-                <LinearGradient colors={[MODE_COLORS[type].accent, MODE_COLORS[type].deep]} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={styles.iconBox}>
-                  <Icon name={TYPE_ICON[type]} size={26} color="#FFFFFF" stroke={2.7} />
-                </LinearGradient>
+                {hasArt(type) ? (
+                  <View style={styles.artBox}><ModeArt mode={type} size={48} /></View>
+                ) : isGlass() ? (
+                  <GlassBall size={48} accent={MODE_COLORS[type].accent} deep={MODE_COLORS[type].deep}>
+                    <Icon name={TYPE_ICON[type]} size={30} color={tint('#FFFFFF')} stroke={2.2} />
+                  </GlassBall>
+                ) : (
+                  <LinearGradient colors={[MODE_COLORS[type].accent, MODE_COLORS[type].deep]} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={styles.iconBox}>
+                    <Icon name={TYPE_ICON[type]} size={26} color={tint('#FFFFFF')} stroke={2.7} />
+                  </LinearGradient>
+                )}
                 <View style={{ flex: 1 }}>
                   <Text style={styles.name} numberOfLines={1}>{it.text}</Text>
                   <Text style={styles.meta} numberOfLines={1}>{t(`mode.${type}`)} · {when(item.date)}</Text>
@@ -70,7 +83,7 @@ export default function HistoryScreen({ back, history }) {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = liveStyles(() => ({
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 2 },
   title: { fontSize: 28, textAlign: 'center' },
   badge: {
@@ -84,13 +97,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: neon.panel, borderRadius: 18,
     borderWidth: 2, borderColor: neon.border, padding: 10, marginBottom: 10,
   },
+  artBox: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center' },
   iconBox: {
-    width: 48, height: 48, borderRadius: 24, borderWidth: 2, borderColor: '#FFFFFF',
+    width: 48, height: 48, borderRadius: 24, borderWidth: 2, borderColor: tint('#FFFFFF'),
     alignItems: 'center', justifyContent: 'center',
   },
-  name: { color: '#FFFFFF', fontSize: 18, fontWeight: '900' },
+  name: { color: tint('#FFFFFF'), fontSize: 18, fontWeight: '900' },
   meta: { color: neon.sub, fontSize: 13, fontWeight: '700', marginTop: 1 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 60, gap: 10 },
-  emptyTitle: { color: '#FFFFFF', fontSize: 20, fontWeight: '900' },
+  emptyTitle: { color: tint('#FFFFFF'), fontSize: 20, fontWeight: '900' },
   emptySub: { color: colors.muted, fontWeight: '600', textAlign: 'center' },
-});
+}));

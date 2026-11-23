@@ -20,7 +20,7 @@ export function initA11y() {
   } catch (e) { /* ignora */ }
 }
 
-// Fala um aviso (resultado, bomba estourou...). Com TalkBack ligado, usa o anúncio dele; senão, a voz do app (se a narração estiver ligada).
+// Fala um aviso (resultado, aviso...). Com TalkBack ligado, usa o anúncio dele; senão, a voz do app (se a narração estiver ligada).
 export function announce(text) {
   if (!text) return;
   try {

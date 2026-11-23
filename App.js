@@ -7,6 +7,7 @@ import { colors } from './src/theme';
 import { KEYS, load, save } from './src/storage';
 import NeonBackground from './src/components/NeonBackground';
 import { initSounds } from './src/sounds';
+import { stash } from './src/removed';
 import { loadSettings, useSettings, getSettings } from './src/settings';
 import { initA11y } from './src/a11y';
 
@@ -16,13 +17,15 @@ import DrawNamesScreen from './src/screens/DrawNamesScreen';
 import RouletteScreen from './src/screens/RouletteScreen';
 import DiceScreen from './src/screens/DiceScreen';
 import RaceScreen from './src/screens/RaceScreen';
-import BombScreen from './src/screens/BombScreen';
 import CoinScreen from './src/screens/CoinScreen';
+import NumberScreen from './src/screens/NumberScreen';
+import WhoStartsScreen from './src/screens/WhoStartsScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import ResultScreen from './src/screens/ResultScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import WelcomeScreen from './src/screens/WelcomeScreen';
 
+import { tint } from './src/themes';
 const SCREENS = {
   Home: HomeScreen,
   Participants: ParticipantsScreen,
@@ -30,8 +33,9 @@ const SCREENS = {
   Roulette: RouletteScreen,
   Dice: DiceScreen,
   Race: RaceScreen,
-  Bomb: BombScreen,
   Coin: CoinScreen,
+  NumberDraw: NumberScreen,
+  WhoStarts: WhoStartsScreen,
   History: HistoryScreen,
   Result: ResultScreen,
   Settings: SettingsScreen,
@@ -91,6 +95,15 @@ export default function App() {
     return () => sub.remove();
   }, [stack, back]);
 
+  // ao voltar para o início ou para os participantes, devolve a lista completa (se o usuário foi tirando os sorteados)
+  const topName = stack[stack.length - 1].name;
+  useEffect(() => {
+    if ((topName === 'Home' || topName === 'Participants') && stash.all) {
+      setParticipants(stash.all);
+      stash.all = null;
+    }
+  }, [topName]);
+
   if (!ready || !fontsLoaded) return <View style={{ flex: 1, backgroundColor: colors.bgBottom }} />;
 
   const current = stack[stack.length - 1];
@@ -99,9 +112,9 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      <View style={{ flex: 1, backgroundColor: getSettings().profile === 'glass' ? '#241087' : colors.bgBottom }}>
+      <View style={{ flex: 1, backgroundColor: getSettings().profile === 'glass' ? tint('#241087') : colors.bgBottom }}>
         <NeonBackground />
-        {getSettings().contrast && <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,3,20,0.55)' }} />}
+        {getSettings().contrast && <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: tint('rgba(0,3,20,0.55)') }} />}
         <SafeAreaView style={{ flex: 1 }}>
           <Screen
             key={`${stack.length}-${current.name}`}

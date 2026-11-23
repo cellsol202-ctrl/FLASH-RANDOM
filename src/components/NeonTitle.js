@@ -2,6 +2,10 @@ import React from 'react';
 import Svg, { Defs, LinearGradient, Stop, Text as SvgText, Line } from 'react-native-svg';
 import { neon } from '../theme';
 
+import { tint, themeKey } from '../themes';
+
+// pretos e cinzas: o degradê do título continua claro (branco → prata), senão some no fundo escuro
+const SILVER = { black: ['#FFFFFF', '#F2F4F8', '#D3D8E2', '#AEB6C6'], gray: ['#FFFFFF', '#F2F4F8', '#DDE1E9', '#BCC3D0'], wine: ['#FFFFFF', '#FFEDF1', '#FFC2D0', '#F0869E'] };
 // Título metálico: degradê branco → azul-gelo com "horizonte" de cromo, contorno escuro e brilho.
 // A fonte diminui sozinha se o texto não couber na largura.
 export default function NeonTitle({ text, width = 320, fontSize = 36, line = true, italic = true }) {
@@ -21,23 +25,24 @@ export default function NeonTitle({ text, width = 320, fontSize = 36, line = tru
   const y = fit * 1.08;
   const T = { fontFamily: italic ? 'Nunito_900Black_Italic' : 'Nunito_900Black', fontSize: fit, textAnchor: 'middle' };
   const id = `nt${text.length}${Math.round(fit)}`;
+  const stops = SILVER[themeKey()] || [tint('#FFFFFF'), tint('#D7EBFF'), tint('#7CC3FF'), tint('#2A78FF')];
   return (
     <Svg width={width} height={h}>
       <Defs>
         <LinearGradient id={id} x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor="#FFFFFF" />
-          <Stop offset="0.46" stopColor="#D7EBFF" />
-          <Stop offset="0.5" stopColor="#7CC3FF" />
-          <Stop offset="1" stopColor="#2A78FF" />
+          <Stop offset="0" stopColor={stops[0]} />
+          <Stop offset="0.46" stopColor={stops[1]} />
+          <Stop offset="0.5" stopColor={stops[2]} />
+          <Stop offset="1" stopColor={stops[3]} />
         </LinearGradient>
         <LinearGradient id={`${id}l`} x1="0" y1="0" x2="1" y2="0">
           <Stop offset="0" stopColor={neon.cyan} stopOpacity="0" />
-          <Stop offset="0.5" stopColor="#BDEBFF" stopOpacity="1" />
+          <Stop offset="0.5" stopColor={tint('#BDEBFF')} stopOpacity="1" />
           <Stop offset="1" stopColor={neon.cyan} stopOpacity="0" />
         </LinearGradient>
       </Defs>
-      <SvgText x={width / 2} y={y} {...T} fill="none" stroke="#2E8BFF" strokeOpacity={0.35} strokeWidth={fit * 0.2} strokeLinejoin="round">{text}</SvgText>
-      <SvgText x={width / 2} y={y} {...T} fill="#020722" stroke="#020722" strokeWidth={fit * 0.1} strokeLinejoin="round">{text}</SvgText>
+      <SvgText x={width / 2} y={y} {...T} fill="none" stroke={tint('#2E8BFF')} strokeOpacity={0.35} strokeWidth={fit * 0.2} strokeLinejoin="round">{text}</SvgText>
+      <SvgText x={width / 2} y={y} {...T} fill={tint('#020722')} stroke={tint('#020722')} strokeWidth={fit * 0.1} strokeLinejoin="round">{text}</SvgText>
       <SvgText x={width / 2} y={y} {...T} fill={`url(#${id})`}>{text}</SvgText>
       {line && <Line x1={width * 0.12} x2={width * 0.88} y1={h - 3} y2={h - 3} stroke={`url(#${id}l)`} strokeWidth={2.5} strokeLinecap="round" />}
     </Svg>

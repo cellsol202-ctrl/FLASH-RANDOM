@@ -1,12 +1,13 @@
 import React, { useEffect, useReducer, useRef, useState } from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable, Image, StyleSheet } from 'react-native';
 import Text from '../components/Text';
 import Header from '../components/Header';
 import ScreenTitle from '../components/ScreenTitle';
 import Button from '../components/Button';
 import Icon from '../components/Icon';
-import Coin from '../components/Coin';
-import { colors, PALETTE, neon } from '../theme';
+import Coin, { COIN_ART } from '../components/Coin';
+import Sphere from '../components/Sphere';
+import { colors, PALETTE, neon, textOn } from '../theme';
 import { play, playTap, stop, useSounds } from '../sounds';
 import { t } from '../i18n';
 import { duration } from '../settings';
@@ -16,6 +17,7 @@ import { announce } from '../a11y';
 import { sk, G } from '../skin';
 
 
+import { tint, liveStyles } from '../themes';
 // Cara ou coroa: o 1º participante é "cara", o 2º é "coroa". A moeda sobe girando e cai com um dos lados para cima.
 export default function CoinScreen({ participants, back, replace, addHistory }) {
   useSounds(['coin', 'result']);
@@ -145,10 +147,14 @@ export default function CoinScreen({ participants, back, replace, addHistory }) 
       <View style={styles.sides}>
         {[a, b].map((p, i) => (
           <View key={p.id} style={[sk(styles.side, G.side), winner === i && styles.sideWin, winner >= 0 && winner !== i && { opacity: 0.4 }]}>
-            <View style={[styles.avatar, { backgroundColor: PALETTE[i] }]}><Text style={styles.avatarTxt}>{p.name.charAt(0).toUpperCase()}</Text></View>
+            <Sphere size={36} color={PALETTE[i]}><Text style={[styles.avatarTxt, { color: textOn(PALETTE[i]) }]}>{p.name.charAt(0).toUpperCase()}</Text></Sphere>
             <View style={{ flex: 1 }}>
               <Text style={styles.sideName} numberOfLines={1}>{shortName(p.name, 12)}</Text>
-              <Text style={styles.sideFace}>{i === 0 ? t('coin.heads') : t('coin.tails')}</Text>
+              {/* a moedinha mostra qual face é de quem: estrela = cara, coroa = coroa */}
+              <View style={styles.faceRow}>
+                <Image source={i === 0 ? COIN_ART.heads : COIN_ART.tails} fadeDuration={0} style={styles.faceIcon} />
+                <Text style={styles.sideFace}>{i === 0 ? t('coin.heads') : t('coin.tails')}</Text>
+              </View>
             </View>
             {winner === i && <Icon name="crown" size={20} color={colors.yellow} stroke={2.6} />}
           </View>
@@ -158,7 +164,7 @@ export default function CoinScreen({ participants, back, replace, addHistory }) 
       <View style={styles.footer}>
         <Button
           title={phase === 'idle' ? t('coin.start') : phase === 'flying' ? t('coin.flipping') : faceName.toUpperCase() + '!'}
-          icon={phase === 'idle' ? <Icon name="coin" size={22} color="#FFFFFF" stroke={2.4} /> : null}
+          icon={phase === 'idle' ? <Icon name="coin" size={22} color={tint('#FFFFFF')} stroke={2.4} /> : null}
           onPress={flip}
           disabled={phase !== 'idle'}
         />
@@ -167,23 +173,24 @@ export default function CoinScreen({ participants, back, replace, addHistory }) 
   );
 }
 
-const styles = StyleSheet.create({
+const styles = liveStyles(() => ({
   sub: { color: neon.sub, textAlign: 'center', fontWeight: '700', paddingHorizontal: 16 },
   board: {
-    flex: 1, marginHorizontal: 14, marginTop: 10, borderRadius: 28, backgroundColor: 'rgba(3,12,64,0.55)',
+    flex: 1, marginHorizontal: 14, marginTop: 10, borderRadius: 28, backgroundColor: tint('rgba(3,12,64,0.55)'),
     borderWidth: 2, borderColor: neon.border, overflow: 'hidden',
   },
-  shadow: { position: 'absolute', borderRadius: 100, backgroundColor: '#000814' },
+  shadow: { position: 'absolute', borderRadius: 100, backgroundColor: tint('#000814') },
   hint: { position: 'absolute', bottom: 14, left: 0, right: 0, color: '#fff', fontWeight: '800', opacity: 0.85, textAlign: 'center', paddingHorizontal: 20 },
   sides: { flexDirection: 'row', gap: 10, paddingHorizontal: 14, paddingTop: 10 },
   side: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(4,16,80,0.7)', borderRadius: 16,
+    flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: tint('rgba(4,16,80,0.7)'), borderRadius: 16,
     borderWidth: 2, borderColor: neon.border, padding: 8,
   },
-  sideWin: { borderColor: colors.yellow, backgroundColor: 'rgba(30,107,255,0.4)' },
-  avatar: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: neon.ice, alignItems: 'center', justifyContent: 'center' },
-  avatarTxt: { color: '#020722', fontWeight: '900', fontSize: 16 },
+  sideWin: { borderColor: colors.yellow, backgroundColor: tint('rgba(30,107,255,0.4)') },
+  avatarTxt: { color: tint('#020722'), fontWeight: '900', fontSize: 16 },
   sideName: { color: '#fff', fontWeight: '900', fontSize: 15 },
   sideFace: { color: neon.sub, fontWeight: '700', fontSize: 12 },
+  faceRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  faceIcon: { width: 18, height: 18 },
   footer: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 14 },
-});
+}));

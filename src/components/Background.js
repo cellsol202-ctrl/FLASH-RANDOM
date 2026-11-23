@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Bolt from './Bolt';
 import { colors, FILL } from '../theme';
 
+import { tint } from '../themes';
 function Floater({ item, h }) {
   const v = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -38,7 +39,7 @@ export default function Background() {
         kind: i % 3 === 0 ? 'bolt' : 'dot',
         x: Math.random() * (width - 40),
         size: i % 3 === 0 ? 34 + Math.random() * 26 : 10 + Math.random() * 22,
-        color: ['#FFD43B', '#FFFFFF', '#2EE6FF', '#FFFFFF'][i % 4],
+        color: [tint('#FFD43B'), tint('#FFFFFF'), tint('#2EE6FF'), tint('#FFFFFF')][i % 4],
         o: i % 3 === 0 ? 0.12 : 0.14,
         dur: 9000 + Math.random() * 9000,
         delay: Math.random() * 6000,

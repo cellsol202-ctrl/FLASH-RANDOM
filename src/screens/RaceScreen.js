@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Animated, Easing, StyleSheet } from 'react-native';
+import { View, Animated, Easing, StyleSheet, Text as RNText } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
+import { LinearGradient } from 'expo-linear-gradient';
 import Text from '../components/Text';
+import Sphere from '../components/Sphere';
 import Header from '../components/Header';
 import ScreenTitle from '../components/ScreenTitle';
 import Button from '../components/Button';
 import Icon from '../components/Icon';
-import { colors, PALETTE, shade, neon, glowText, FILL } from '../theme';
+import { colors, PALETTE, neon, glowText, FILL } from '../theme';
 import BoltLayers from '../components/BoltLayers';
 import { makeBolt } from '../lightning';
 import { effectsOn, getSettings, duration } from '../settings';
@@ -18,12 +20,19 @@ import { vibrate } from '../a11y';
 import { announce } from '../a11y';
 import { sk, G } from '../skin';
 
+import { tint, liveStyles } from '../themes';
+import { planHeats, racersOf, isHeat, resultParams } from '../heats';
 const PAD = 10;      // margem lateral da pista
 const START = 30;    // espaço acima da linha de largada
 const FINISH = 34;   // espaço abaixo da linha de chegada
+const SQ = 12;       // tamanho de cada quadradinho da faixa xadrez de chegada
 
-export default function RaceScreen({ participants, back, replace, addHistory }) {
+export default function RaceScreen({ params, participants: all, back, replace, addHistory }) {
   useSounds(['race', 'result']);
+  // mais de 12 participantes: corre em baterias de 12 e os vencedores fazem a final
+  const plan = useMemo(() => (params && params.plan) || planHeats(all), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const participants = useMemo(() => racersOf(plan, all), [plan, all]);
+  const heatLabel = plan ? (plan.final ? t('heat.final') : t('heat.label', { n: plan.idx + 1, total: plan.groups.length })) : '';
   const n = participants.length;
   const [area, setArea] = useState({ w: 0, h: 0 });
   const [phase, setPhase] = useState('idle'); // idle | count | racing | done
@@ -58,7 +67,6 @@ export default function RaceScreen({ participants, back, replace, addHistory }) 
   const laneW = area.w ? (area.w - PAD * 2) / n : 0;
   const ball = Math.max(16, Math.min(laneW - 6, 40));
   const travel = Math.max(10, area.h - START - FINISH - ball * 0.5);
-  const turns = (travel / (Math.PI * ball)); // voltas que a bolinha dá até a chegada (rolando de verdade)
 
   const pulse = (txt) => {
     setCount(txt);
@@ -143,39 +151,47 @@ export default function RaceScreen({ participants, back, replace, addHistory }) 
         setWinner(win);
         setPhaseBoth('done');
         const name = participants[win].name;
-        addHistory(name, 'race');
-        later(() => replace('Result', { winner: name, type: 'race', color: PALETTE[win % PALETTE.length] }), 2300);
+        if (!isHeat(plan)) addHistory(name, 'race'); // as baterias não entram no histórico, só a final
+        later(() => replace('Result', resultParams(plan, participants[win], 'race', PALETTE[win % PALETTE.length])), 2300);
       }
       if (t < sim.totalSeconds) raf.current = requestAnimationFrame(loop); else raf.current = null;
     };
     raf.current = requestAnimationFrame(loop);
   }
 
-  const cols = laneW ? Math.floor((area.w - PAD * 2) / 12) : 0;
+  const trackW = Math.max(0, area.w - PAD * 2);
+  const cols = laneW ? Math.ceil(trackW / SQ) : 0;
   const winName = winner >= 0 ? participants[winner].name : '';
+  // dica "Toque em LARGADA para começar!" com a palavra do botão destacada (vale nos 4 idiomas)
+  const hint = t('race.hint');
+  const word = t('race.start').replace(/[!¡]/g, '').trim();
+  const at = word ? hint.indexOf(word) : -1;
 
   return (
     <View style={{ flex: 1 }}>
       <Header onBack={back} />
       <ScreenTitle text={t('mode.race')} fontSize={36} />
       <Text style={styles.sub}>
-        {phase === 'idle' ? t('race.idle') : phase === 'count' ? t('race.ready') : phase === 'racing' ? t('race.racing') : t('race.done')}
+        {heatLabel ? `${heatLabel} · ` : ''}{phase === 'idle' ? t('race.idle') : phase === 'count' ? t('race.ready') : phase === 'racing' ? t('race.racing') : t('race.done')}
       </Text>
 
-      <View style={sk(styles.board, G.board)} onLayout={(e) => setArea({ w: e.nativeEvent.layout.width - 8, h: e.nativeEvent.layout.height - 12 })}>
+      {/* tabuleiro: igual nos perfis Normal e Vidro (faz parte da arte do jogo, como a roleta e os dados) */}
+      <View style={styles.board} onLayout={(e) => setArea({ w: e.nativeEvent.layout.width - 8, h: e.nativeEvent.layout.height - 12 })}>
+        {/* luz do piso: azul em cima, puxando para o violeta embaixo */}
+        <LinearGradient pointerEvents="none" colors={[tint('rgba(70,140,255,0.16)'), tint('rgba(140,80,255,0.24)')]} style={FILL} />
         {area.w > 0 && (
           <>
-            {/* raias */}
-            {participants.map((p, i) => (
-              <View key={`lane${p.id}`} style={[styles.lane, { left: PAD + i * laneW, width: laneW }, i % 2 === 0 && styles.laneAlt]} />
+            {/* raias: linhas finas de luz entre uma bolinha e outra */}
+            {Array.from({ length: n + 1 }).map((_, i) => (
+              <View key={`div${i}`} pointerEvents="none" style={[styles.divider, { left: PAD + i * laneW - 1 }]} />
             ))}
-            {/* linha de largada e de chegada (xadrez) */}
-            <View style={[styles.startLine, { top: START - 4, left: PAD, right: PAD }]} />
-            <View style={{ position: 'absolute', left: PAD, top: area.h - FINISH, width: cols * 12, height: 12, overflow: 'hidden' }}>
+            {/* linha de largada (acesa) e de chegada (xadrez com brilho) */}
+            <View style={[styles.startLine, { top: START - 5, left: PAD, width: trackW }]} />
+            <View style={[styles.finish, { left: PAD, top: area.h - FINISH, width: trackW }]}>
               {[0, 1].map((r) => (
-                <View key={r} style={{ flexDirection: 'row', height: 6 }}>
+                <View key={r} style={{ flexDirection: 'row', height: 7 }}>
                   {Array.from({ length: cols }).map((_, c) => (
-                    <View key={c} style={{ width: 12, height: 6, backgroundColor: (c + r) % 2 ? '#FFFFFF' : colors.dark }} />
+                    <View key={c} style={{ width: SQ, height: 7, backgroundColor: (c + r) % 2 ? '#FFFFFF' : tint('#0B1240') }} />
                   ))}
                 </View>
               ))}
@@ -184,36 +200,24 @@ export default function RaceScreen({ participants, back, replace, addHistory }) 
             {/* bolinhas */}
             {participants.map((p, i) => {
               const burnt = dead.includes(i); // eliminada por raio: fica chamuscada e parada
-              const color = burnt ? '#3A3F52' : PALETTE[i % PALETTE.length];
+              const color = burnt ? tint('#3A3F52') : PALETTE[i % PALETTE.length];
               const isLead = phase === 'racing' && leader === i && !burnt;
               const isWin = winner === i;
               const out = (winner >= 0 && !isWin) || burnt;
               const x = PAD + i * laneW + (laneW - ball) / 2;
               const ty = pos[i].interpolate({ inputRange: [0, 1], outputRange: [0, travel] });
-              const rot = pos[i].interpolate({ inputRange: [0, 1], outputRange: ['0deg', `${Math.round(turns * 360)}deg`] });
               return (
                 <Animated.View
                   key={p.id}
                   style={{ position: 'absolute', left: x, top: START, width: ball, height: ball, opacity: burnt ? 0.6 : out ? 0.4 : 1, zIndex: isWin || isLead ? 5 : 1, transform: [{ translateY: ty }] }}
                 >
-                  <View style={[styles.shadow, { width: ball * 0.9, height: ball * 0.3, top: ball * 0.85, left: ball * 0.05 }]} />
-                  <Animated.View
-                    style={[
-                      styles.ball,
-                      {
-                        width: ball, height: ball, borderRadius: ball / 2, backgroundColor: color,
-                        borderColor: burnt ? '#7B8194' : isWin || isLead ? colors.yellow : colors.outline,
-                        transform: [{ rotate: rot }, { scale: isWin ? 1.25 : 1 }],
-                      },
-                    ]}
-                  >
-                    <View style={[styles.stripe, { backgroundColor: shade(color, 0.55) }]} />
-                    <View style={[styles.shine, { width: ball * 0.28, height: ball * 0.28, borderRadius: ball * 0.14 }]} />
-                  </Animated.View>
+                  <View style={{ width: ball, height: ball, transform: [{ scale: isWin ? 1.25 : 1 }] }}>
+                    <Sphere size={ball} color={color} ring={isWin || isLead ? colors.yellow : null} />
+                  </View>
                   {/* "cores com marcas": número fixo no centro (não gira junto com a bolinha) */}
                   {getSettings().marks && (
                     <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: ball, height: ball, alignItems: 'center', justifyContent: 'center' }}>
-                      <Text style={{ color: '#FFFFFF', fontSize: ball * 0.5, fontWeight: '900', textShadowColor: '#020722', textShadowRadius: 3 }}>{i + 1}</Text>
+                      <Text style={{ color: tint('#FFFFFF'), fontSize: ball * 0.5, fontWeight: '900', textShadowColor: tint('#020722'), textShadowRadius: 3 }}>{i + 1}</Text>
                     </View>
                   )}
                 </Animated.View>
@@ -224,14 +228,18 @@ export default function RaceScreen({ participants, back, replace, addHistory }) 
             {strike.current.bolts.length > 0 && (
               <Svg width={area.w} height={area.h} style={styles.strike} pointerEvents="none">
                 {strike.current.hit && (
-                  <Circle cx={strike.current.hit.x} cy={strike.current.hit.y} r={ball * 1.1} fill="#BDEBFF" opacity={0.45 * Math.max(...strike.current.bolts.map((b) => b.flicker[b.age]))} />
+                  <Circle cx={strike.current.hit.x} cy={strike.current.hit.y} r={ball * 1.1} fill={tint('#BDEBFF')} opacity={0.45 * Math.max(...strike.current.bolts.map((b) => b.flicker[b.age]))} />
                 )}
                 <BoltLayers bolts={strike.current.bolts} u={1.15} />
               </Svg>
             )}
-            <Animated.View pointerEvents="none" style={[FILL, { backgroundColor: '#DDF3FF', opacity: flash, zIndex: 8 }]} />
+            <Animated.View pointerEvents="none" style={[FILL, { backgroundColor: tint('#DDF3FF'), opacity: flash, zIndex: 8 }]} />
 
-            {phase === 'idle' && <Text style={styles.hint}>{t('race.hint')}</Text>}
+            {phase === 'idle' && (
+              <Text style={styles.hint}>
+                {at < 0 ? hint : <>{hint.slice(0, at)}<RNText style={{ color: neon.cyan }}>{word}</RNText>{hint.slice(at + word.length)}</>}
+              </Text>
+            )}
             {phase === 'racing' && zapMsg !== '' && (
               <View style={[sk(styles.banner, G.banner), styles.zapBanner]}>
                 <Icon name="bolt" size={20} color={neon.cyan} stroke={2.4} />
@@ -258,7 +266,7 @@ export default function RaceScreen({ participants, back, replace, addHistory }) 
           <View key={p.id} style={[sk(styles.chip, G.chip), ((winner >= 0 && winner !== i) || dead.includes(i)) && { opacity: 0.4 }]}>
             {dead.includes(i)
               ? <Icon name="bolt" size={13} color={neon.cyan} stroke={2} />
-              : <View style={[styles.dot, { backgroundColor: PALETTE[i % PALETTE.length] }]} />}
+              : <Sphere size={15} color={PALETTE[i % PALETTE.length]} />}
             <Text style={[styles.chipName, dead.includes(i) && { textDecorationLine: 'line-through' }]} numberOfLines={1}>{shortName(p.name, 10)}</Text>
           </View>
         ))}
@@ -267,7 +275,7 @@ export default function RaceScreen({ participants, back, replace, addHistory }) 
       <View style={styles.footer}>
         <Button
           title={phase === 'idle' ? t('race.start') : phase === 'count' ? t('race.readyBtn') : t('race.running')}
-          icon={phase === 'idle' ? <Icon name="flag" size={22} color="#FFFFFF" stroke={2.6} /> : null}
+          icon={phase === 'idle' ? <Icon name="flag" size={22} color={tint('#FFFFFF')} stroke={2.6} /> : null}
           onPress={startRace}
           disabled={phase !== 'idle'}
         />
@@ -276,36 +284,36 @@ export default function RaceScreen({ participants, back, replace, addHistory }) 
   );
 }
 
-const styles = StyleSheet.create({
+const styles = liveStyles(() => ({
   title: { fontSize: 26, textAlign: 'center' },
   sub: { color: neon.sub, textAlign: 'center', marginTop: 0, fontWeight: '700', paddingHorizontal: 20 },
+  // borda de néon acesa, com brilho por fora e um pouco por dentro
   board: {
-    flex: 1, marginHorizontal: 14, marginTop: 10, borderRadius: 28, backgroundColor: 'rgba(3,12,64,0.55)',
-    borderWidth: 2, borderColor: neon.border, overflow: 'hidden',
+    flex: 1, marginHorizontal: 14, marginTop: 10, borderRadius: 28, backgroundColor: tint('rgba(6,14,72,0.6)'),
+    borderWidth: 2, borderColor: tint('#7CC4FF'), overflow: 'hidden',
+    boxShadow: `0 0 16px ${tint('rgba(70,150,255,0.8)')}, inset 0 0 18px ${tint('rgba(90,170,255,0.35)')}`,
   },
-  lane: { position: 'absolute', top: 0, bottom: 0, backgroundColor: 'rgba(255,255,255,0.04)' },
-  laneAlt: { backgroundColor: 'rgba(255,255,255,0.09)' },
-  startLine: { position: 'absolute', height: 0, borderTopWidth: 3, borderStyle: 'dashed', borderColor: 'rgba(189,235,255,0.6)' },
-  ball: { borderWidth: 3, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  stripe: { position: 'absolute', width: '130%', height: '22%', opacity: 0.55 },
-  shine: { position: 'absolute', top: '14%', left: '16%', backgroundColor: 'rgba(255,255,255,0.8)' },
-  shadow: { position: 'absolute', borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.28)' },
+  divider: {
+    position: 'absolute', top: 0, bottom: 0, width: 2, backgroundColor: tint('rgba(150,200,255,0.3)'),
+    boxShadow: `0 0 6px ${tint('rgba(120,180,255,0.55)')}`,
+  },
+  startLine: { position: 'absolute', height: 3, borderRadius: 2, backgroundColor: tint('#D4F1FF'), boxShadow: `0 0 10px ${tint('rgba(140,205,255,0.95)')}` },
+  finish: { position: 'absolute', height: 14, overflow: 'hidden', boxShadow: '0 0 12px rgba(255,255,255,0.55)' },
   strike: { position: 'absolute', left: 0, top: 0, zIndex: 7 },
   zapBanner: { borderColor: neon.ice, zIndex: 10 },
   hint: { position: 'absolute', bottom: 52, alignSelf: 'center', color: '#fff', fontWeight: '800', opacity: 0.85, textAlign: 'center', paddingHorizontal: 20 },
   countWrap: { position: 'absolute', top: '36%', alignSelf: 'center' },
   countTxt: { fontSize: 84, textAlign: 'center' },
   banner: {
-    position: 'absolute', top: 14, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(2,10,60,0.95)',
+    position: 'absolute', top: 14, alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: tint('rgba(2,10,60,0.95)'),
     borderRadius: 18, borderWidth: 2, borderColor: neon.cyan, paddingHorizontal: 16, paddingVertical: 9, zIndex: 10, maxWidth: '94%',
   },
-  bannerTxt: { flexShrink: 1, color: '#FFFFFF', fontSize: 17, fontWeight: '900' },
+  bannerTxt: { flexShrink: 1, color: tint('#FFFFFF'), fontSize: 17, fontWeight: '900' },
   legend: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6, paddingHorizontal: 14, paddingTop: 10 },
   chip: {
-    flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(4,16,80,0.7)', borderRadius: 14,
+    flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: tint('rgba(4,16,80,0.7)'), borderRadius: 14,
     borderWidth: 1.5, borderColor: neon.border, paddingHorizontal: 8, paddingVertical: 3, maxWidth: 150,
   },
-  dot: { width: 12, height: 12, borderRadius: 6, borderWidth: 1.5, borderColor: neon.ice },
   chipName: { color: '#fff', fontSize: 12, fontWeight: '800', flexShrink: 1 },
   footer: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 14 },
-});
+}));

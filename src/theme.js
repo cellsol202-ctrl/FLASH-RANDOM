@@ -1,8 +1,9 @@
+import { tint } from './themes';
 // Paleta "cartoon": cores vivas + contorno escuro grosso em tudo.
 export const colors = {
-  bgTop: '#3867FF',
-  bgMid: '#2027A8',
-  bgBottom: '#11134C',
+  get bgTop() { return tint('#3867FF'); },
+  get bgMid() { return tint('#2027A8'); },
+  get bgBottom() { return tint('#11134C'); },
   outline: '#11134C',
   dark: '#11134C',
   text: '#FFFFFF',
@@ -18,14 +19,39 @@ export const colors = {
   board: 'rgba(17,19,76,0.55)',
 };
 
-// uma cor por participante (usada na lista, roleta e dados)
-export const PALETTE = [
+// As 12 primeiras cores de cada participante (usadas na lista, roleta, corrida e dados)
+const BASE_COLORS = [
   '#FF4D6D', '#FFB703', '#2EC4B6', '#4D96FF', '#B388FF', '#FF8FAB',
   '#7CE05B', '#F15BB5', '#00D1FF', '#FFE14D', '#FF7A2F', '#2EE6A6',
 ];
 
-// cores dos dados: as 12 dos participantes + preto (só o modo de dados deixa escolher a cor)
-export const DICE_COLORS = [...PALETTE, '#20242F'];
+// Catálogo completo: 24 cores diferentes entre si, para listas grandes (animais, lugares...) não repetirem cor.
+// As 12 primeiras são as de sempre, então quem tem até 12 participantes não vê nenhuma mudança.
+export const PALETTE = [
+  ...BASE_COLORS,
+  '#D62839', '#2F4BFF', '#1E9E4F', '#8A3FFC', '#A8782A', '#0E8C9C',
+  '#FF9E7A', '#9AA5B1', '#C2185B', '#A3C93A', '#5B3FA8', '#E6E9F2',
+];
+
+// cores dos dados: as 12 base + preto (só se escolhe) + 8 extras, para até 20 dados sem repetir cor (o modo de dados deixa escolher a cor)
+export const DICE_COLORS = [...BASE_COLORS, '#20242F', '#A9713C', '#3A56D4', '#B5173A', '#A8B820', '#8E3FD1', '#8D99AE', '#D9A441', '#1B9E77'];
+
+// Cor de cada nome do modelo pronto "Cores", na mesma ordem em todos os idiomas:
+// vermelho, azul, verde, amarelo, roxo, laranja, rosa, preto, branco, cinza, marrom, dourado, turquesa, vinho.
+export const COLOR_NAME_TONES = [
+  '#E53935', '#1E6BFF', '#2EB85C', '#FFD60A', '#8E44E0', '#FF8A1F', '#FF6FB5',
+  '#20242F', '#F4F6FB', '#8D99AE', '#8B5A2B', '#D9A441', '#30D5C8', '#7B1E3A',
+];
+
+// Cor do participante i: a cor própria (tone), quando ele tem uma (modelo "Cores"), ou a da posição no catálogo.
+export const colorOf = (p, i) => (p && p.tone) || PALETTE[i % PALETTE.length];
+
+// Cor de texto que dá para ler sobre um fundo hex: o azul escuro de sempre em fundos claros, branco nos escuros (preto, azul-royal...).
+export function textOn(hex) {
+  const n = parseInt(String(hex).slice(1), 16);
+  const lum = (((n >> 16) & 255) * 0.299 + ((n >> 8) & 255) * 0.587 + (n & 255) * 0.114) / 255;
+  return lum < 0.5 ? '#FFFFFF' : colors.dark;
+}
 
 // escurece uma cor hex (factor < 1)
 export function shade(hex, factor) {
@@ -50,7 +76,8 @@ export const titleStyle = {
 export const FILL = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 };
 
 // Tema "neon metálico": fundo quase preto, azul elétrico, brilho e vidro.
-export const neon = {
+// (valores lidos na hora, para acompanhar o tema de cor escolhido nos Ajustes)
+const NEON = {
   bg: '#020722',
   blue: '#1E6BFF',
   glow: '#2E8BFF',
@@ -60,9 +87,11 @@ export const neon = {
   border: '#3D9BFF',
   sub: '#9FC2FF',
 };
+export const neon = {};
+Object.keys(NEON).forEach((k) => Object.defineProperty(neon, k, { enumerable: true, get: () => tint(NEON[k]) }));
 
 // texto branco com brilho azul (contagem regressiva etc.)
 export const glowText = {
   color: '#FFFFFF', fontWeight: '900',
-  textShadowColor: '#2E8BFF', textShadowRadius: 18, textShadowOffset: { width: 0, height: 0 },
+  get textShadowColor() { return tint('#2E8BFF'); }, textShadowRadius: 18, textShadowOffset: { width: 0, height: 0 },
 };
