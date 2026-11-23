@@ -5,6 +5,7 @@ import Header from '../components/Header';
 import ScreenTitle from '../components/ScreenTitle';
 import Button from '../components/Button';
 import AnimatedIn from '../components/AnimatedIn';
+import Sphere from '../components/Sphere';
 import { colors, PALETTE, neon, colorOf, textOn, COLOR_NAME_TONES } from '../theme';
 import Icon from '../components/Icon';
 import { playTap, useSounds } from '../sounds';
@@ -108,9 +109,10 @@ export default function ParticipantsScreen({ params, navigate, back, participant
           renderItem={({ item, index }) => (
             <AnimatedIn from={14}>
               <View style={sk(styles.row, G.item)}>
-                <View style={[styles.avatar, { backgroundColor: useTone ? colorOf(item, index) : PALETTE[index % PALETTE.length] }]}>
+                {/* esfera brilhante na cor do participante, com a inicial do nome */}
+                <Sphere size={40} color={useTone ? colorOf(item, index) : PALETTE[index % PALETTE.length]}>
                   <Text style={[styles.avatarTxt, { color: textOn(useTone ? colorOf(item, index) : PALETTE[index % PALETTE.length]) }]}>{item.name.charAt(0).toUpperCase()}</Text>
-                </View>
+                </Sphere>
                 <Text style={styles.rowName} numberOfLines={1}>{item.name}</Text>
                 <Pressable onPress={() => { playTap(); remove(item.id); }} hitSlop={10} style={styles.del}>
                   <Icon name="close" size={16} color={tint('#FFFFFF')} stroke={3.4} />
@@ -150,7 +152,6 @@ const styles = liveStyles(() => ({
     flexDirection: 'row', alignItems: 'center', backgroundColor: neon.panel, borderRadius: 16,
     borderWidth: 2, borderColor: neon.border, padding: 8, marginBottom: 8, gap: 10,
   },
-  avatar: { width: 40, height: 40, borderRadius: 20, borderWidth: 2, borderColor: neon.ice, alignItems: 'center', justifyContent: 'center' },
   avatarTxt: { color: colors.dark, fontWeight: '900', fontSize: 17 },
   rowName: { color: tint('#FFFFFF'), flex: 1, fontSize: 18, fontWeight: '900' },
   del: { width: 34, height: 34, borderRadius: 17, backgroundColor: tint('#FF4D6D'), borderWidth: 2, borderColor: neon.ice, alignItems: 'center', justifyContent: 'center' },

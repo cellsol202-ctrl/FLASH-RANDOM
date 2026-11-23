@@ -1,12 +1,13 @@
 import React, { useEffect, useReducer, useRef, useState } from 'react';
-import { View, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable, Image, StyleSheet } from 'react-native';
 import Text from '../components/Text';
 import Header from '../components/Header';
 import ScreenTitle from '../components/ScreenTitle';
 import Button from '../components/Button';
 import Icon from '../components/Icon';
-import Coin from '../components/Coin';
-import { colors, PALETTE, neon } from '../theme';
+import Coin, { COIN_ART } from '../components/Coin';
+import Sphere from '../components/Sphere';
+import { colors, PALETTE, neon, textOn } from '../theme';
 import { play, playTap, stop, useSounds } from '../sounds';
 import { t } from '../i18n';
 import { duration } from '../settings';
@@ -146,10 +147,14 @@ export default function CoinScreen({ participants, back, replace, addHistory }) 
       <View style={styles.sides}>
         {[a, b].map((p, i) => (
           <View key={p.id} style={[sk(styles.side, G.side), winner === i && styles.sideWin, winner >= 0 && winner !== i && { opacity: 0.4 }]}>
-            <View style={[styles.avatar, { backgroundColor: PALETTE[i] }]}><Text style={styles.avatarTxt}>{p.name.charAt(0).toUpperCase()}</Text></View>
+            <Sphere size={36} color={PALETTE[i]}><Text style={[styles.avatarTxt, { color: textOn(PALETTE[i]) }]}>{p.name.charAt(0).toUpperCase()}</Text></Sphere>
             <View style={{ flex: 1 }}>
               <Text style={styles.sideName} numberOfLines={1}>{shortName(p.name, 12)}</Text>
-              <Text style={styles.sideFace}>{i === 0 ? t('coin.heads') : t('coin.tails')}</Text>
+              {/* a moedinha mostra qual face é de quem: estrela = cara, coroa = coroa */}
+              <View style={styles.faceRow}>
+                <Image source={i === 0 ? COIN_ART.heads : COIN_ART.tails} fadeDuration={0} style={styles.faceIcon} />
+                <Text style={styles.sideFace}>{i === 0 ? t('coin.heads') : t('coin.tails')}</Text>
+              </View>
             </View>
             {winner === i && <Icon name="crown" size={20} color={colors.yellow} stroke={2.6} />}
           </View>
@@ -182,9 +187,10 @@ const styles = liveStyles(() => ({
     borderWidth: 2, borderColor: neon.border, padding: 8,
   },
   sideWin: { borderColor: colors.yellow, backgroundColor: tint('rgba(30,107,255,0.4)') },
-  avatar: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: neon.ice, alignItems: 'center', justifyContent: 'center' },
   avatarTxt: { color: tint('#020722'), fontWeight: '900', fontSize: 16 },
   sideName: { color: '#fff', fontWeight: '900', fontSize: 15 },
   sideFace: { color: neon.sub, fontWeight: '700', fontSize: 12 },
+  faceRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  faceIcon: { width: 18, height: 18 },
   footer: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 14 },
 }));

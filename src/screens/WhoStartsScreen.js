@@ -6,7 +6,8 @@ import ScreenTitle from '../components/ScreenTitle';
 import Button from '../components/Button';
 import Icon from '../components/Icon';
 import Bolt from '../components/Bolt';
-import { colors, PALETTE, neon, FILL } from '../theme';
+import Sphere from '../components/Sphere';
+import { colors, PALETTE, neon, FILL, textOn } from '../theme';
 import { play, playTap, useSounds } from '../sounds';
 import { t } from '../i18n';
 import { effectsOn, getSettings, FIRST_COUNT } from '../settings';
@@ -216,11 +217,13 @@ export default function WhoStartsScreen({ back }) {
               key={f.id}
               pointerEvents="none"
               style={[styles.finger, {
-                left: f.x - size / 2, top: f.y - size / 2, width: size, height: size, borderRadius: size / 2,
-                borderColor: f.color, backgroundColor: `${f.color}55`, opacity: dim ? 0.22 : 1,
-              }, isWin && { borderWidth: 6, borderColor: colors.yellow, backgroundColor: tint('rgba(255,210,31,0.45)'), transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] }) }] }]}
+                left: f.x - size / 2, top: f.y - size / 2, width: size, height: size, opacity: dim ? 0.22 : 1,
+              }, isWin && { transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] }) }] }]}
             >
-              {(getSettings().marks || alt || isWin) && <Text style={[styles.num, isWin && { fontSize: 30 }]}>{f.n}</Text>}
+              {/* esfera brilhante na cor de cada dedo; quem foi escolhido vira uma esfera dourada com anel branco */}
+              <Sphere size={size} color={isWin ? colors.yellow : f.color} ring={isWin ? '#FFFFFF' : null}>
+                {(getSettings().marks || alt || isWin) && <Text style={[styles.num, { color: textOn(isWin ? colors.yellow : f.color) }, isWin && { fontSize: 30 }]}>{f.n}</Text>}
+              </Sphere>
             </Animated.View>
           );
         })}
@@ -277,7 +280,7 @@ const styles = liveStyles(() => ({
   },
   hintBox: { ...{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }, alignItems: 'center', justifyContent: 'center', gap: 10, paddingHorizontal: 24 },
   hint: { color: tint('rgba(255,255,255,0.8)'), fontWeight: '800', fontSize: 16, textAlign: 'center' },
-  finger: { position: 'absolute', borderWidth: 4, alignItems: 'center', justifyContent: 'center' },
+  finger: { position: 'absolute', alignItems: 'center', justifyContent: 'center' },
   num: { color: tint('#FFFFFF'), fontWeight: '900', fontSize: 22 },
   countBox: { position: 'absolute', left: 0, right: 0, bottom: 14, alignItems: 'center' },
   count: { color: colors.yellow, fontSize: 64, fontWeight: '900', textShadowColor: tint('rgba(0,0,60,0.8)'), textShadowRadius: 8 },

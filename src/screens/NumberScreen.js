@@ -10,7 +10,8 @@ import Icon from '../components/Icon';
 import Toggle from '../components/Toggle';
 import ShareCard from '../components/ShareCard';
 import ShareInfoSheet from '../components/ShareInfoSheet';
-import { colors, neon } from '../theme';
+import Sphere from '../components/Sphere';
+import { colors, neon, textOn } from '../theme';
 import { play, playTap, useSounds } from '../sounds';
 import { t } from '../i18n';
 import { KEYS, load, save } from '../storage';
@@ -39,6 +40,18 @@ function pickNumbers(min, max, qty, banned, noRepeat) {
   for (let n = min; n <= max; n++) if (!banned.has(n)) pool.push(n);
   for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
   return pool.slice(0, qty);
+}
+
+// bola de bingo: esfera brilhante com o número; a última sorteada fica dourada. Cresce um pouco para números longos.
+function NumBall({ n, last, small }) {
+  const color = last ? colors.yellow : tint('#2F6BFF');
+  const len = String(n).length;
+  const size = small ? Math.max(32, len * 8 + 12) : Math.max(40, len * 9 + 14);
+  return (
+    <Sphere size={size} color={color}>
+      <Text style={[small ? styles.ballSmTxt : styles.ballTxt, { color: textOn(color) }]}>{n}</Text>
+    </Sphere>
+  );
 }
 
 // uma coluna da slot machine: o número de cima e o de baixo aparecem apagados
@@ -264,7 +277,7 @@ export default function NumberScreen({ back, addHistory }) {
               : (
                 <View style={styles.balls} accessible accessibilityLabel={`${t('number.recent')}: ${recent.slice(0, RECENT_SHOW).join(', ')}`}>
                   {recent.slice(0, RECENT_SHOW).map((n, k) => (
-                    <View key={`${n}-${k}`} style={[styles.ball, k === 0 && styles.ballLast]}><Text style={[styles.ballTxt, k === 0 && { color: colors.dark }]}>{n}</Text></View>
+                    <NumBall key={`${n}-${k}`} n={n} last={k === 0} />
                   ))}
                 </View>
               )}
@@ -287,9 +300,7 @@ export default function NumberScreen({ back, addHistory }) {
             {results.length > 1 && (
               <View style={styles.balls}>
                 {results.map((n, k) => (
-                  <View key={`${n}-${k}`} style={[styles.ball, k === results.length - 1 && phase === 'done' && styles.ballLast]}>
-                    <Text style={styles.ballTxt}>{n}</Text>
-                  </View>
+                  <NumBall key={`${n}-${k}`} n={n} last={k === results.length - 1 && phase === 'done'} />
                 ))}
               </View>
             )}
@@ -298,7 +309,7 @@ export default function NumberScreen({ back, addHistory }) {
                 <Text style={styles.seenTitle}>{t('number.previous')}</Text>
                 <View style={styles.balls}>
                   {recent.slice(results.length, results.length + 7).map((n, k) => (
-                    <View key={`${n}-${k}`} style={styles.ballSm}><Text style={styles.ballSmTxt}>{n}</Text></View>
+                    <NumBall key={`${n}-${k}`} n={n} small />
                   ))}
                 </View>
               </View>
@@ -362,12 +373,9 @@ const styles = liveStyles(() => ({
   reelMainLocked: { color: colors.yellow },
   big: { color: colors.yellow, fontSize: 20, fontWeight: '900', textAlign: 'center' },
   balls: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6 },
-  ball: { minWidth: 40, height: 40, borderRadius: 20, paddingHorizontal: 8, backgroundColor: tint('rgba(30,107,255,0.45)'), borderWidth: 2, borderColor: neon.border, alignItems: 'center', justifyContent: 'center' },
-  ballLast: { backgroundColor: colors.yellow, borderColor: tint('#FFF6C2') },
   ballTxt: { color: tint('#FFFFFF'), fontWeight: '900', fontSize: 15 },
   seen: { position: 'absolute', bottom: 10, left: 14, right: 14, alignItems: 'center', gap: 4 },
   seenTitle: { color: neon.sub, fontSize: 12, fontWeight: '800' },
-  ballSm: { minWidth: 32, height: 30, borderRadius: 15, paddingHorizontal: 8, backgroundColor: tint('rgba(30,107,255,0.35)'), borderWidth: 1.5, borderColor: neon.border, alignItems: 'center', justifyContent: 'center' },
   ballSmTxt: { color: tint('#FFFFFF'), fontWeight: '900', fontSize: 13 },
   recentBox: { gap: 6, marginTop: 4 },
   recentHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

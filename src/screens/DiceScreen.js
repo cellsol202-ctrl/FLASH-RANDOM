@@ -8,6 +8,7 @@ import { colors, DICE_COLORS, neon } from '../theme';
 import { dieSizeFor, restDice, simulateRoll, readRoll, FPS } from '../dice3d';
 import Dice3D from '../components/Dice3D';
 import StyleButton from '../components/StyleButton';
+import Sphere from '../components/Sphere';
 import { resolveColors, pickColor } from '../playerColors';
 import { duration, getSettings, useSettings } from '../settings';
 import { t } from '../i18n';
@@ -261,7 +262,8 @@ export default function DiceScreen({ params, participants: all, setParticipants,
             <View style={styles.swatches}>
               {DICE_COLORS.map((c, k) => (
                 <View key={c} style={styles.swatchCell}>
-                  <View style={[styles.swatch, { backgroundColor: c }, SW < 17 && { width: SW, height: SW, borderRadius: SW / 2 }, k === pick.k && styles.swatchOn]} />
+                  {/* a cor escolhida fica maior e com anel branco */}
+                  <Sphere size={k === pick.k ? 34 : SW} color={c} ring={k === pick.k ? '#FFFFFF' : null} />
                 </View>
               ))}
             </View>
@@ -275,7 +277,7 @@ export default function DiceScreen({ params, participants: all, setParticipants,
           const out = !active.includes(i);
           return (
             <View key={p.id} {...chipTouch(i)} style={[sk(styles.chip, G.chip), out && { opacity: 0.35 }, pick && pick.i === i && styles.chipOn]}>
-              <View pointerEvents="none" style={[styles.dot, { backgroundColor: DICE_COLORS[colorIdx[i]] }]} />
+              <View pointerEvents="none"><Sphere size={15} color={DICE_COLORS[colorIdx[i]]} /></View>
               {getSettings().marks && <Text style={styles.chipVal}>{i + 1}</Text>}
               <Text style={styles.chipName} numberOfLines={1}>{shortName(p.name, 10)}</Text>
               {lastVals[i] !== undefined && <Text style={styles.chipVal}>{lastVals[i]}</Text>}
@@ -320,7 +322,6 @@ const styles = liveStyles(() => ({
     borderWidth: 1.5, borderColor: neon.border, paddingHorizontal: 10, paddingVertical: 6, maxWidth: 150,
   },
   chipOn: { borderColor: neon.cyan, backgroundColor: tint('rgba(30,107,255,0.55)') },
-  dot: { width: 14, height: 14, borderRadius: 7, borderWidth: 1.5, borderColor: neon.ice },
   chipName: { color: '#fff', fontSize: 12, fontWeight: '800', flexShrink: 1 },
   colorHint: { color: neon.sub, fontSize: 12, fontWeight: '700', textAlign: 'center', marginTop: 6, paddingHorizontal: 16, opacity: 0.9 },
   palette: {
@@ -331,8 +332,6 @@ const styles = liveStyles(() => ({
   paletteSub: { color: neon.sub, fontSize: 11, fontWeight: '700', textAlign: 'center' },
   swatches: { flexDirection: 'row', height: 50, alignItems: 'center' },
   swatchCell: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  swatch: { width: 17, height: 17, borderRadius: 9, borderWidth: 1.5, borderColor: tint('rgba(255,255,255,0.55)') },
-  swatchOn: { width: 34, height: 34, borderRadius: 17, borderWidth: 3, borderColor: tint('#FFFFFF') },
   chipVal: { color: colors.dark, backgroundColor: colors.yellow, fontSize: 12, fontWeight: '900', paddingHorizontal: 6, borderRadius: 8, overflow: 'hidden' },
   footer: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 14 },
 }));
