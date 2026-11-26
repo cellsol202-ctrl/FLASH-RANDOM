@@ -6,7 +6,8 @@ import { effectsOn, getSettings } from '../settings';
 
 // Descargas elétricas saindo do centro (sorteio de nomes), no estilo de um raio de verdade.
 // Quanto maior a intensidade, mais descargas ao mesmo tempo. Na revelação (intensidade >= 2) estouram várias.
-export default function LightningBurst({ size = 300, intensity = 1, interval = 70 }) {
+// strength: força do conjunto (1 = original, 0.5 = metade do brilho: raios, clarão e anel)
+export default function LightningBurst({ size = 300, intensity = 1, interval = 70, strength = 1 }) {
   const bolts = useRef([]);
   const power = useRef(intensity);
   const [, setTick] = useState(0);
@@ -42,7 +43,7 @@ export default function LightningBurst({ size = 300, intensity = 1, interval = 7
   const u = (size / 320) * 1.3; // espessuras proporcionais ao tamanho do palco
 
   return (
-    <Svg width={size} height={size}>
+    <Svg width={size} height={size} style={strength < 1 ? { opacity: strength } : undefined}>
       <Defs>
         <RadialGradient id="lbCore" cx="0.5" cy="0.5" r="0.5">
           <Stop offset="0" stopColor="#BDEBFF" stopOpacity={0.55} />
