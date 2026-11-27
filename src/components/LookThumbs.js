@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import Svg, { Circle, Path, Rect, Ellipse } from 'react-native-svg';
-import { lookOf, WheelRing } from './WheelArt';
+import { lookOf, WheelRing, WheelBezel, bezelGeom, IMG } from './WheelArt';
 
 // Miniaturas do menu de estilos (roleta e dados). Só traços e cores lisas (sem degradês),
 // então várias miniaturas na mesma tela não se confundem entre si.
@@ -15,6 +15,22 @@ const polar = (c, deg, r) => {
 // Roleta: fatias coloridas + o aro do estilo (o mesmo desenho da roda, em ponto pequeno) + centro
 export function WheelThumb({ look: name, size = 36 }) {
   const look = lookOf(name);
+  if (look && look.image) {
+    // estilo de imagem: fatias lisas por baixo e a imagem do aro (versão pequena) por cima
+    const g = bezelGeom(size);
+    const r = IMG.vis * 0.97 * g.s;
+    const pp = (deg) => { const a = (deg * Math.PI) / 180; return `${(g.hub.x + r * Math.sin(a)).toFixed(2)} ${(g.hub.y - r * Math.cos(a)).toFixed(2)}`; };
+    return (
+      <View style={{ width: size, height: size }}>
+        <Svg width={size} height={size} style={{ position: 'absolute', left: 0, top: 0 }}>
+          {SLICES.map((col, i) => (
+            <Path key={i} d={`M ${g.hub.x} ${g.hub.y} L ${pp(i * 60)} A ${r} ${r} 0 0 1 ${pp((i + 1) * 60)} Z`} fill={col} />
+          ))}
+        </Svg>
+        <WheelBezel size={size} mini />
+      </View>
+    );
+  }
   const c = size / 2;
   // o aro de verdade é fino demais para 36 px: nas miniaturas ele fica mais grosso
   const big = look && {

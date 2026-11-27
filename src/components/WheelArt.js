@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { View, Image } from 'react-native';
 import Svg, { Defs, RadialGradient, LinearGradient, Stop, Circle, Path, Polygon, G, Ellipse } from 'react-native-svg';
 import { FILL } from '../theme';
 import { getSettings } from '../settings';
@@ -55,7 +56,56 @@ const LOOKS = {
     hub: { ring: ['#FFE9A6', '#E9A21B', '#8F5200'], orb: ['#FFA6CF', '#E0115F', '#5E0830'], bolt: ['#FFFFFF', '#FFD9EA'] },
     pointer: { kind: 'gem', rim: ['#FFC266', '#FF7A00', '#A33C00'], gem: ['#C07BFF', '#5B1FA8', '#1D0A3D'] },
   },
+  // 5) ouro com luzes (arte do Alex): aro dourado com lâmpadas, botão azul e ponteiro de gota dourada vêm da IMAGEM
+  //    (assets/roleta/aro.png, com a área das fatias vazada); as fatias e os nomes continuam sendo desenhados pelo app.
+  //    Os campos de aro/lâmpadas abaixo só existem para o resto do código não quebrar: com image:true eles não são usados.
+  ouro: {
+    image: true,
+    rim: 0,
+    outer: { c: '#FFD166', glow: '#F59E0B', w: 3 },
+    inner: { c: '#2F8BFF', hl: '#BDEBFF', w: 3 },
+    tube: [['#8A4B00', 1], ['#E9A21B', 0.7], ['#FFD166', 0.4]],
+    bulbs: { kind: 'dot', r: 3.2, on: '#FFFBE0', off: '#B8860B' },
+    divider: { c: '#0A0A26', w: 3 }, rays: false, shade: 0.2, light: 0, gloss: true,
+    hub: { ring: ['#FFE9A6', '#E9A21B', '#8F5200'], orb: ['#F4FEFF', '#7DD0FF', '#2468E0'], bolt: ['#1559D8', '#FFFFFF'] },
+    pointer: { kind: 'gem', rim: ['#FFE28F', '#F59E0B', '#B45309'], gem: ['#FFF7B0', '#FFC21A', '#C77700'] },
+  },
 };
+
+// Medidas da imagem do aro (em pixels da imagem original, 1232 x 1230):
+//   cx, cy, R = centro e raio de fora do aro · hx, hy = centro do botão azul (as fatias giram em volta dele)
+//   disc = raio do disco de fatias (passa por baixo do aro) · vis = raio que sempre aparece dentro do aro · hub = raio do botão
+//   tip = distância da ponta do ponteiro até o centro (os nomes terminam antes dela, para o ponteiro não cobrir o fim do nome vencedor)
+export const IMG = { w: 1232, h: 1230, cx: 624.0, cy: 622.3, R: 594, hx: 625.5, hy: 626.0, disc: 538, vis: 488, hub: 116, tip: 429 };
+const ARO = require('../../assets/roleta/aro.png');
+const ARO_MINI = require('../../assets/roleta/aro_mini.png');
+
+// Onde cada peça fica numa roda de `size` px (o tamanho é o diâmetro de fora do aro)
+export function bezelGeom(size) {
+  const s = size / (2 * IMG.R);
+  const hx = size / 2 + (IMG.hx - IMG.cx) * s, hy = size / 2 + (IMG.hy - IMG.cy) * s;
+  return {
+    s,
+    img: { left: size / 2 - IMG.cx * s, top: size / 2 - IMG.cy * s, width: IMG.w * s, height: IMG.h * s },
+    disc: { D: 2 * IMG.disc * s, left: hx - IMG.disc * s, top: hy - IMG.disc * s },
+    hub: { x: hx, y: hy, r: IMG.hub * s },
+  };
+}
+
+// Aro de imagem (parado, por cima das fatias): sombra do botão + a imagem com o buraco das fatias
+export const WheelBezel = React.memo(function WheelBezel({ size, mini }) {
+  const g = bezelGeom(size);
+  return (
+    <View pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0, width: size, height: size }}>
+      {!mini && (
+        <Svg width={size} height={size} style={FILL}>
+          <Circle cx={g.hub.x} cy={g.hub.y + g.hub.r * 0.04} r={g.hub.r + 2.5 * (size / 380)} fill="#000814" fillOpacity={0.5} />
+        </Svg>
+      )}
+      <Image source={mini ? ARO_MINI : ARO} resizeMode="stretch" fadeDuration={0} style={{ position: 'absolute', ...g.img }} />
+    </View>
+  );
+});
 
 export const WHEEL_LOOKS = ['atual', ...Object.keys(LOOKS)];
 export const lookOf = (name) => LOOKS[name] || null;       // 'atual' (ou nome desconhecido) = null = desenho de sempre

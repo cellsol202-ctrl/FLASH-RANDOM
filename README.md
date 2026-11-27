@@ -12,8 +12,8 @@ Aplicativo de sorteios feito em **React Native (Expo)** com foco em **imersão e
 
 | Modo | Como funciona |
 |---|---|
-| ⚡ **Tambor** | Os nomes giram na vertical, como um caça-níquel, entre dois raios; começa em GIRAR e para na hora quando você toca em PARAR (o nome do centro vence) |
-| 🎡 **Roleta** | Roleta imersiva: toque ou deslize o dedo em qualquer lugar da área (esquerda = horário, direita = anti-horário), com setas de néon de apoio e botão PARAR que para na hora; listas prontas e som de ticks; 5 estilos de roda à escolha (botão de paleta) |
+| ⚡ **Tambor** | Os nomes giram na vertical, como um caça-níquel; começa em GIRAR e para na hora quando você toca em PARAR (o nome do centro vence). O próprio tambor 3D de bingo (azul, com aros dourados, suporte de dois cavaletes em A de tábuas planas e manivela, como no ícone do modo; tudo desenhado em SVG) é a janela do sorteio: cada nome fica numa faixa arredondada com bonequinho, como no ícone do modo, e as faixas dão a volta no corpo do tambor (30° por nome). A faixa do centro brilha, o tambor gira junto (emendas e manivela) e para com o nome sorteado, que toma a cor do participante. O nome sempre cabe na faixa (a letra encolhe e nomes longos são abreviados). O azul do tambor segue o tema de cor do app (as cores do desenho foram medidas nos pixels do ícone do modo; para voltar à paleta antiga basta trocar `PALETA` para `'classica'` no topo de `DrumArt.js`; também há a chave `MODELO`: `'eletrico'` (padrão: sem manivela, com um motor de ponta brilhante, neon nos aros, núcleo de energia no disco e arcos elétricos enquanto gira, no motor e na borda do aro da esquerda, que somem no modo de movimento reduzido; não há mais raios no fundo da tela); duas setinhas bem pequenas, uma de cada lado do tambor (no mesmo estilo do ponteiro da roleta, inclusive o escolhido no botão de paleta), apontam para a faixa do meio e marcam onde sai o nome vencedor ou `'manivela'` (o modelo com manivela de mão)) |
+| 🎡 **Roleta** | Roleta imersiva: toque ou deslize o dedo em qualquer lugar da área (esquerda = horário, direita = anti-horário), com setas de néon de apoio e botão PARAR que para na hora; listas prontas e som de ticks; 6 estilos de roda à escolha (botão de paleta); o estilo **Ouro com luzes** usa o aro dourado com lâmpadas, o botão azul e o ponteiro desenhados pela Alex (`assets/roleta/aro.png`), com as fatias e os nomes desenhados pelo app por baixo do aro; nele o ponteiro é parte da imagem (não balança) e as lâmpadas ficam fixas, e as setinhas do Tambor viram gotas douradas |
 | 🎲 **Dados** | Dados 3D em quantidade escolhida (1, 2, 3 ou mais), com cores à escolha e 4 estilos de dado (botão de paleta); o maior número vence. Com mais de 12 participantes, o sorteio é feito em baterias, até 48 |
 | 🏁 **Corrida de bolinhas** | Cada participante é uma bolinha brilhante numa pista neon (borda acesa, raias com linhas de luz, largada e chegada iluminadas); a primeira a chegar vence, quem está na frente ganha um anel dourado e os raios podem eliminar bolinhas no caminho. Com mais de 12 participantes, a corrida é feita em baterias (até 48) e os vencedores disputam a final |
 | 🪙 **Cara ou coroa** | A moeda gira com física própria e decide entre dois lados: **Cara** (moeda azul com estrela) e **Coroa** (moeda dourada com coroa) |
@@ -86,11 +86,12 @@ O perfil `preview` do `eas.json` precisa estar configurado com `"buildType": "ap
 flash-random/
 ├── App.js                 # pilha de telas, configurações e fundo
 ├── index.js               # ponto de entrada do Expo
-├── assets/                # ícone do app, logo, ícones dos modos, moedas, troféus, fontes e sons
+├── assets/                # ícone do app, logo, ícones dos modos (o dado tem faces com 3, 4 e 5 bolinhas), aro da roleta (roleta/), moedas, troféus, fontes e sons
 └── src/
     ├── screens/           # telas: início, sorteios, resultado, histórico, ajustes
     │   └── home/          # início nos perfis Normal e Vidro
     ├── components/        # botões, cabeçalho, fundo, raios, troféu, moeda, bolinhas (Sphere.js) etc.
+    │                      # (DrumArt.js: tambor 3D do modo Tambor, desenhado em SVG em 3 camadas empilhadas, com suporte de tábuas (cavaletes em A abertos 25° da vertical, por fora dos aros, travessa baixa e longarinas no chão) e motor elétrico na ponta do eixo; a tela DrawNamesScreen.js põe as faixas dos nomes e as duas setinhas do vencedor sobre ele)
     ├── looks.js           # estilos de roleta e dados disponíveis no menu e o estilo padrão
     ├── i18n.js            # textos em 4 idiomas
     ├── settings.js        # configurações e perfis
