@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Animated, Easing, PanResponder, useWindowDimensions, StyleSheet } from 'react-native';
 import Text from '../components/Text';
 import Svg, { Path, Circle, Polygon, Defs, RadialGradient, Stop, Text as SvgText } from 'react-native-svg';
-import { lookOf, rimWidth, WheelRim, WheelHub, WheelPointer } from '../components/WheelArt';
+import { lookOf, rimWidth, WheelRim, WheelHub, WheelPointer, WheelBezel, bezelGeom, IMG } from '../components/WheelArt';
 import Header from '../components/Header';
 import ScreenTitle from '../components/ScreenTitle';
 import LightningField from '../components/LightningField';
@@ -33,10 +33,13 @@ const Wheel = React.memo(function Wheel({ participants, size, look }) {
   const slice = 360 / n;
   const c = size / 2;
   const u = size / 380;
-  const r = c - 3 - rimWidth(look, size, RIM);
+  const img = !!(look && look.image); // estilo de imagem: o disco vai até debaixo do aro e só parte dele aparece
+  const k = img ? c / IMG.disc : 1;   // px da tela por px da imagem
+  const r = img ? c - 2 : c - 3 - rimWidth(look, size, RIM);
+  const rVis = img ? IMG.vis * k : r; // até onde as fatias sempre aparecem
   // nomes na vertical (ao longo do raio, lendo do centro para a borda): cabe bem mais letras do que de lado
-  const rIn = r * 0.26, rOut = r * 0.95;
-  const fontSize = Math.max(9, Math.min(17, r * 0.3 * ((2 * Math.PI) / n) * 0.8)); // fatias estreitas = letra menor
+  const rIn = img ? IMG.hub * k * 1.12 : r * 0.26, rOut = img ? Math.min(rVis * 0.95, (IMG.tip - 12) * k) : rVis * 0.95;
+  const fontSize = Math.max(9, Math.min(17, rVis * 0.3 * ((2 * Math.PI) / n) * 0.8)); // fatias estreitas = letra menor
   const maxChars = Math.max(4, Math.floor((rOut - rIn) / (fontSize * 0.58)));
   const cols = participants.map((p, i) => {
     let color = colorOf(p, i);
@@ -63,7 +66,7 @@ const Wheel = React.memo(function Wheel({ participants, size, look }) {
           <RadialGradient id="wsh" cx="0.5" cy="0.5" r="0.5">
             <Stop offset="0" stopColor="#000814" stopOpacity={look.shade} />
             <Stop offset="0.55" stopColor="#000814" stopOpacity={0} />
-            <Stop offset="1" stopColor="#FFFFFF" stopOpacity={0.12} />
+            <Stop offset="1" stopColor="#FFFFFF" stopOpacity={look.light !== undefined ? look.light : 0.12} />
           </RadialGradient>
         </Defs>
       )}
@@ -76,6 +79,13 @@ const Wheel = React.memo(function Wheel({ participants, size, look }) {
       {look && <Circle cx={c} cy={c} r={r} fill="url(#wsh)" />}
       {look && look.rays && <Path d={rayL} stroke="#FFFFFF" strokeOpacity={0.1} strokeWidth={1} fill="none" />}
       {look && look.rays && <Path d={rayD} stroke="#000814" strokeOpacity={0.12} strokeWidth={1} fill="none" />}
+      {/* brilho de quina (como na arte): um fio claro colado na divisória de cada fatia e outro no arco de fora */}
+      {look && look.gloss && participants.map((p, i) => {
+        const a0 = i * slice + Math.min(1.4, slice * 0.08), a1 = (i + 1) * slice - Math.min(1.4, slice * 0.08);
+        const rg = rVis * 0.975;
+        const d = `M ${pt(c, a0, rIn * 1.05)} L ${pt(c, a0, rg)} A ${rg} ${rg} 0 ${slice > 180 ? 1 : 0} 1 ${pt(c, a1, rg)}`;
+        return <Path key={`g${p.id}`} d={d} stroke="#FFFFFF" strokeOpacity={0.38} strokeWidth={Math.max(1, 1.5 * u)} strokeLinecap="round" strokeLinejoin="round" fill="none" />;
+      })}
       {participants.map((p, i) => {
         const a0 = i * slice;
         const color = cols[i];
@@ -328,6 +338,9 @@ export default function RouletteScreen({ participants, back, replace, addHistory
       {/* área de deslize: vai do subtítulo até o botão GIRAR */}
       <View {...pan.panHandlers} style={styles.zone} onLayout={(e) => { setZoneY(e.nativeEvent.layout.y); setZoneH(e.nativeEvent.layout.height); }}>
         <View style={styles.zoneInner} onLayout={(e) => setInnerY(e.nativeEvent.layout.y)}>
+          {look && look.image ? (
+            <View style={{ height: 34 }} /> /* o ponteiro faz parte da imagem do aro; este espaço mantém a roda no mesmo lugar */
+          ) : (
           <Animated.View style={[styles.pointer, { transform: [{ rotate: pointerRot }] }]}>
             {look ? <WheelPointer look={look} /> : (
               <Svg width={50} height={60} viewBox="0 0 50 60">
@@ -336,6 +349,17 @@ export default function RouletteScreen({ participants, back, replace, addHistory
               </Svg>
             )}
           </Animated.View>
+          )}
+          {look && look.image ? (
+            <View style={{ width: size, height: size }}>
+              {(() => { const g = bezelGeom(size); return (
+                <Animated.View style={{ position: 'absolute', left: g.disc.left, top: g.disc.top, width: g.disc.D, height: g.disc.D, transform: [{ rotate }] }}>
+                  <Wheel participants={participants} size={g.disc.D} look={look} />
+                </Animated.View>
+              ); })()}
+              <WheelBezel size={size} />
+            </View>
+          ) : (
           <View style={{ width: size, height: size }}>
             <Animated.View style={{ width: size, height: size, transform: [{ rotate }] }}>
               <Wheel participants={participants} size={size} look={look} />
@@ -343,6 +367,7 @@ export default function RouletteScreen({ participants, back, replace, addHistory
             </Animated.View>
             {look && <WheelHub size={size} look={look} />}
           </View>
+          )}
           {showArrows && (
             <View style={[styles.arrows, spinning && { opacity: 0 }]} pointerEvents="none" importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
               <SwipeArrows active={!spinning} />
